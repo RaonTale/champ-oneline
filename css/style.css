@@ -274,6 +274,7 @@ body {
   color: var(--muted);
   cursor: pointer;
 }
+.abBtn .abRate { margin-left: 5px; font-size: 11px; font-weight: 600; opacity: .7; }
 .abBtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
 /* 챔피언스는 특성 1개 고정 → 눌린 상태로 잠금(클릭 불가) */
 .abBtn.locked { cursor: default; }

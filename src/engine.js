@@ -48,7 +48,14 @@
       nature: side.nature || 'Serious',
       boosts: {},
     };
-    if (side.ability) { opts.ability = side.ability; opts.abilityOn = true; }
+    if (side.ability) {
+      opts.ability = side.ability; opts.abilityOn = true;   // 입력/선택된 특성 (명시 → 활성)
+    } else {
+      // 특성 미입력이면 사용률 1위를 기본값으로 (roster는 사용률 내림차순 정렬됨).
+      // abilityOn=false 라 패시브(천하장사·까칠한피부 등)는 적용되고 토글형은 비활성 유지.
+      const roster = (window.KO && window.KO.speciesAbilities && window.KO.speciesAbilities[side.species]) || [];
+      if (roster[0]) { opts.ability = roster[0].en; opts.abilityOn = false; }
+    }
     if (side.status) opts.status = side.status;
     if (side.noItem) opts.item = '';
     else if (side.item) opts.item = side.item;

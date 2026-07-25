@@ -161,7 +161,8 @@
       const on = a.en === used;
       const cls = ['abBtn', on ? 'on' : '', single ? 'locked' : 'pick'].filter(Boolean).join(' ');
       const attrs = single ? 'disabled' : `data-role="${role}" data-ab="${encodeURIComponent(a.en)}"`;
-      return `<button type="button" class="${cls}" ${attrs}>${esc(a.ko)}</button>`;
+      const rate = a.rate != null ? `<span class="abRate">${a.rate}%</span>` : '';
+      return `<button type="button" class="${cls}" ${attrs}>${esc(a.ko)}${rate}</button>`;
     }).join('');
     return `<div class="abSide ${role}"><span class="abSideLabel">${label}</span><div class="abChips">${chips}</div></div>`;
   }
