@@ -30,9 +30,6 @@ champcalc/
     └── probe_coverage.js   한글 데이터 커버리지 점검
 
 ```
-## 실행
-로컬에서 `python -m http.server 8085 -d .` 후 http://localhost:8085
-(배포: https://raontale.github.io/champ-oneline/)
 
 ## 라이선스 / 출처
 - 계산 엔진: [@smogon/calc](https://github.com/smogon/damage-calc) (MIT) — `vendor/calc/LICENSE`
