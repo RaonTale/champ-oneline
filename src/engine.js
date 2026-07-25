@@ -122,6 +122,18 @@
     });
   }
 
+  const WEATHER_KO = {Sun: '쾌청', Rain: '비', Sand: '모래', Snow: '싸라기눈'};
+  const TERRAIN_KO = {Electric: '일렉트릭필드', Grassy: '그래스필드', Misty: '미스트필드', Psychic: '사이코필드'};
+
+  // 날씨의 데미지 배율(base damage 단계 처리분 — 헬퍼 조합엔 안 들어가서 따로 곱한다).
+  function weatherMultOf(moveType, weather) {
+    if (weather === 'Sun') return moveType === 'Fire' ? 1.5 : moveType === 'Water' ? 0.5 : 1;
+    if (weather === 'Rain') return moveType === 'Water' ? 1.5 : moveType === 'Fire' ? 0.5 : 1;
+    return 1;
+  }
+  const koAbility = en => (window.KO && window.KO.koName.ability && window.KO.koName.ability[en]) || en;
+  const koItem = en => (window.KO && window.KO.koName.item && window.KO.koName.item[en]) || en;
+
   function firepower(spec) {
     const g = gen();
     const calc = window.calc;
@@ -137,11 +149,43 @@
     const stabMod = calc.getStabMod(attacker, move, desc);
     const finalMods = calc.calculateFinalModsChampions(g, attacker, dummy, move, field, desc, false, 1);
     const finalMod = calc.chainMods(finalMods, 41, 131072);
+    const weatherMult = weatherMultOf(move.type, spec.field.weather); // ★ 날씨(base damage 단계) 보정
+    // 화상: 물리기 최종 데미지 절반 (근성/속임수 제외) — final damage 단계라 따로 곱한다.
+    const applyBurn = attacker.hasStatus('brn') && move.category === 'Physical' &&
+      !attacker.hasAbility('Guts') && !move.named('Facade');
+    const burnMult = applyBurn ? 0.5 : 1;
 
     const hits = move.hits && move.hits > 1 ? move.hits : 1;
-    const single = bp * attack * (stabMod / 4096) * (finalMod / 4096);
+    const single = bp * attack * (stabMod / 4096) * (finalMod / 4096) * weatherMult * burnMult;
     const value = Math.max(0, Math.floor(single) * hits);
-    return {value, attacker, move, field, effBp: bp, effAtk: attack};
+
+    // ── 배율 분해(표시용) — 필드/특성/도구를 엔진 재호출 비율로 이름과 함께 뽑는다 ──
+    const noTerr = buildField(Object.assign({}, spec.field, {terrain: null}));
+    const neutral = attacker.clone(); neutral.ability = 'Pressure'; neutral.abilityOn = false;
+    const d2 = {};
+    const bpBase = calc.calculateBasePowerChampions(g, neutral, dummy, move, noTerr, false, d2, 0);   // 특성·필드 뺀 기본 위력
+    const bpNoTerr = calc.calculateBasePowerChampions(g, attacker, dummy, move, noTerr, false, d2, 0); // 필드만 뺀 위력
+    const atkBase = calc.calculateAttackChampions(g, neutral, dummy, move, noTerr, d2, false);          // 특성 뺀 공격
+
+    const r2 = x => Math.round(x * 100) / 100;
+    const cat = move.category === 'Special' ? '특공' : '공격';
+    const factors = [];
+    factors.push({num: `${cat} ${atkBase}`});
+    factors.push({num: `위력 ${bpBase}`});
+    if (stabMod !== 4096) factors.push({label: '자속', mult: r2(stabMod / 4096)});
+    const abilityMult = (atkBase ? attack / atkBase : 1) * (bpBase ? bpNoTerr / bpBase : 1);
+    if (Math.abs(abilityMult - 1) > 0.005) factors.push({label: koAbility(attacker.ability), mult: r2(abilityMult)});
+    const terrainMult = bpNoTerr ? bp / bpNoTerr : 1;
+    if (Math.abs(terrainMult - 1) > 0.005) factors.push({label: TERRAIN_KO[spec.field.terrain] || '필드', mult: r2(terrainMult)});
+    if (weatherMult !== 1) factors.push({label: WEATHER_KO[spec.field.weather] || '날씨', mult: r2(weatherMult)});
+    if (burnMult !== 1) factors.push({label: '화상', mult: 0.5});
+    const itemMult = finalMod / 4096;
+    if (Math.abs(itemMult - 1) > 0.005) {
+      factors.push({label: spec.attacker.item ? koItem(spec.attacker.item) : '도구', mult: r2(itemMult)});
+    }
+    if (hits > 1) factors.push({num: `${hits}타`});
+
+    return {value, attacker, move, field, effBp: bp, effAtk: attack, factors};
   }
 
   // ── 내구력 ────────────────────────────────────────────────────────────────

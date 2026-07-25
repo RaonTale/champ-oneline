@@ -31,7 +31,7 @@
   const EXAMPLES = [
     'a32+ 한카리아스 지진 vs h32 b32+ 더시마사리',
     '+2 공32+ 생명의구슬 한카 지진 vs h32 b32+ 무장조',
-    'c32+ 리자몽Y 대문자 vs h32 d32+ 마릴리',
+    'c32+ 메가리자몽Y 불대문자 vs h32 d32+ 마릴리',
     'c32+ 생명의구슬 삼삼드래 악의파동',
     'vs h32 d32+ 크레베이스',
     'c32 사이코필드 카디나르마 사이코키네시스 vs h4 마스카나',
@@ -47,9 +47,16 @@
     {key: 'Sand', label: '모래'},
     {key: 'Snow', label: '싸라기눈'},
   ];
-  // 클릭으로 켠 수동 상태. 텍스트에 날씨/벽이 적히면 그쪽이 우선이며 토글에 자동 반영된다.
-  const control = {weather: '', reflect: false, lightScreen: false};
+  const TERRAINS = [
+    {key: 'Electric', label: '일렉트릭'},
+    {key: 'Grassy', label: '그래스'},
+    {key: 'Misty', label: '미스트'},
+    {key: 'Psychic', label: '사이코'},
+  ];
+  // 클릭으로 켠 수동 상태. 텍스트에 날씨/필드/벽이 적히면 그쪽이 우선이며 토글에 자동 반영된다.
+  const control = {weather: '', terrain: '', reflect: false, lightScreen: false};
   const weatherBtn = {};   // key → button
+  const terrainBtn = {};   // key → button
   const screenBtn = {};    // key(reflect/lightScreen) → button
 
   function buildControls() {
@@ -73,6 +80,26 @@
     });
     wGroup.appendChild(seg);
 
+    // 필드 (단일 선택 · 같은 걸 다시 누르면 꺼짐)
+    const tGroup = document.createElement('div');
+    tGroup.className = 'ctrlGroup';
+    tGroup.innerHTML = '<span class="ctrlLabel">필드</span>';
+    const tseg = document.createElement('div');
+    tseg.className = 'seg';
+    TERRAINS.forEach(t => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'segBtn terrain';
+      b.textContent = t.label;
+      b.addEventListener('click', () => {
+        control.terrain = control.terrain === t.key ? '' : t.key;
+        render();
+      });
+      terrainBtn[t.key] = b;
+      tseg.appendChild(b);
+    });
+    tGroup.appendChild(tseg);
+
     // 벽 (독립 토글)
     const sGroup = document.createElement('div');
     sGroup.className = 'ctrlGroup';
@@ -94,15 +121,21 @@
     sGroup.appendChild(screens);
 
     $controls.appendChild(wGroup);
+    $controls.appendChild(tGroup);
     $controls.appendChild(sGroup);
   }
 
   // 토글 UI를 실제 적용값에 맞춰 동기화. 텍스트로 켜진 건 눌린 상태로 고정 표시(bytext).
-  function syncControlsUI(textWeather, textReflect, textLight) {
+  function syncControlsUI(textWeather, textTerrain, textReflect, textLight) {
     const effWeather = textWeather || control.weather;
     for (const key of Object.keys(weatherBtn)) {
       weatherBtn[key].classList.toggle('on', effWeather === key);
       weatherBtn[key].classList.toggle('bytext', !!textWeather && textWeather === key);
+    }
+    const effTerrain = textTerrain || control.terrain;
+    for (const key of Object.keys(terrainBtn)) {
+      terrainBtn[key].classList.toggle('on', effTerrain === key);
+      terrainBtn[key].classList.toggle('bytext', !!textTerrain && textTerrain === key);
     }
     screenBtn.reflect.classList.toggle('on', textReflect || control.reflect);
     screenBtn.reflect.classList.toggle('bytext', textReflect);
@@ -110,20 +143,23 @@
     screenBtn.lightScreen.classList.toggle('bytext', textLight);
   }
 
-  // 토글 상태를 파싱 결과(field)에 얹는다. 텍스트에 적힌 날씨/벽이 우선.
+  // 토글 상태를 파싱 결과(field)에 얹는다. 텍스트에 적힌 날씨/필드/벽이 우선.
   function applyControls(spec) {
     if (!spec || !spec.field) return;
 
     const textWeather = spec.field.weather || '';
+    const textTerrain = spec.field.terrain || '';
     const textReflect = !!spec.field.defenderSide.isReflect;
     const textLight = !!spec.field.defenderSide.isLightScreen;
 
     const effWeather = textWeather || control.weather;
     if (effWeather) spec.field.weather = effWeather;
+    const effTerrain = textTerrain || control.terrain;
+    if (effTerrain) spec.field.terrain = effTerrain;
     if (textReflect || control.reflect) spec.field.defenderSide.isReflect = true;
     if (textLight || control.lightScreen) spec.field.defenderSide.isLightScreen = true;
 
-    syncControlsUI(textWeather, textReflect, textLight);
+    syncControlsUI(textWeather, textTerrain, textReflect, textLight);
   }
 
   // 데미지 바 — 맞은 뒤 "남는 체력"을 HP 게이지로. 초록=확정 생존 HP,
@@ -152,7 +188,7 @@
     if (!text.trim()) {
       $result.innerHTML = '<div class="placeholder">포켓몬과 기술을 입력하면 결과가 바로 나옵니다.</div>';
       $hint.textContent = '';
-      syncControlsUI('', false, false); // 텍스트 없이 수동 토글만 반영
+      syncControlsUI('', '', false, false); // 텍스트 없이 수동 토글만 반영
       return;
     }
 
@@ -199,9 +235,6 @@
 
   function renderHint(spec) {
     const bits = [];
-    if (spec.unknown && spec.unknown.length) {
-      bits.push(`<span class="unknown">모르는 단어: ${spec.unknown.map(esc).join(', ')}</span>`);
-    }
     for (const n of spec.notes || []) bits.push(`<span class="note">${esc(n)}</span>`);
     $hint.innerHTML = bits.join('');
   }

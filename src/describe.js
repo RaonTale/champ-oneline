@@ -161,20 +161,19 @@
   }
 
   function describeFirepower(spec, out) {
-    const move = out.move;
-    const stat = move.category === 'Special' ? 'spa' : 'atk';
-    const statName = move.category === 'Special' ? '특수공격' : '공격';
-    const atk = out.effAtk != null ? out.effAtk : out.attacker.stats[stat];
-    const bp = out.effBp != null ? out.effBp : move.bp;
-    const hits = move.hits && move.hits > 1 ? ` ×${move.hits}타` : '';
+    // 배율 분해를 "특공 194 × 위력 130 × 자속 1.5 × 쾌청 1.5 × 생명의구슬 1.3" 형태로.
+    let sub;
+    if (out.factors && out.factors.length) {
+      sub = out.factors.map(f => (f.num != null ? f.num : `${f.label} ${f.mult}`)).join(' × ');
+    } else {
+      const stat = spec.attacker.move && KO.moveMeta[spec.attacker.move] &&
+        KO.moveMeta[spec.attacker.move].cat === 'Special' ? '특공' : '공격';
+      sub = `${stat} ${out.effAtk} × 위력 ${out.effBp}`;
+    }
     return {
       head: `${sideLabel(spec.attacker)} ${koName('move', spec.attacker.move)}`,
       main: `결정력 ${fmt(out.value)}`,
-      sub: [
-        `${statName} ${atk}`,
-        `위력 ${bp}${hits}`,
-        fieldLabel(spec.field),
-      ].filter(Boolean).join(' · '),
+      sub,
     };
   }
 

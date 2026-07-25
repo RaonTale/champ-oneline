@@ -63,7 +63,7 @@ body {
 
 .wrap {
   position: relative;
-  max-width: 720px;
+  max-width: 900px;   /* PC에서 날씨·필드·벽 토글이 한 줄에 들어가도록 (모바일은 자동 줄바꿈) */
   margin: 0 auto;
   padding: 32px 20px 64px;
 }
@@ -135,6 +135,7 @@ body {
 }
 .segBtn:hover { color: var(--ink); }
 .segBtn.on { background: var(--accent); color: #fff; }
+.segBtn.terrain.on { background: #2f9e6a; color: #fff; }
 .segBtn.toggle.on { background: #3a72e0; }
 /* 입력창 텍스트로 켜진 토글 — 자물쇠로 "글로 고정됨" 표시 */
 .segBtn.bytext::after { content: " 🔒"; font-size: 10px; }
