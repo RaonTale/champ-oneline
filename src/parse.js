@@ -85,6 +85,7 @@
       crit: false,
       status: null, statusKo: null,
       hpPercent: null,
+      alliesFainted: 0,
       fullInvest: false,
       unknown: [],
       notes: [],
@@ -136,6 +137,8 @@
       if ((m = BOOST_TOKEN.exec(key))) { side.boost = Number(m[1] + m[2]); continue; }
       if ((m = HITS_TOKEN.exec(key))) { side.moveOpts.hits = Number(m[1]); side.hitsToken = token; continue; }
       if ((m = HP_TOKEN.exec(key))) { side.hpPercent = Math.min(100, Number(m[1])); continue; }
+      // 쓰러진 아군 수 (성묘 위력·총대장 배율): "3데스" / "3기절"
+      if ((m = /^([0-5])(데스|기절)$/.exec(key))) { side.alliesFainted = Number(m[1]); continue; }
       if (key === '급소') { side.crit = true; continue; }
       if (key === '노템' || key === '무도구') { side.noItem = true; continue; }
       if (key === '풀보정') { side.fullInvest = true; continue; }

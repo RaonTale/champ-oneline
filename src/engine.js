@@ -56,6 +56,7 @@
       const roster = (window.KO && window.KO.speciesAbilities && window.KO.speciesAbilities[side.species]) || [];
       if (roster[0]) { opts.ability = roster[0].en; opts.abilityOn = false; }
     }
+    if (side.alliesFainted) opts.alliesFainted = side.alliesFainted; // 총대장 등
     if (side.status) opts.status = side.status;
     if (side.noItem) opts.item = '';
     else if (side.item) opts.item = side.item;
@@ -79,6 +80,10 @@
     const {Move} = window.calc;
     const opts = Object.assign({}, side.moveOpts);
     if (side.crit) opts.isCrit = true;
+    // 성묘(Last Respects): 챔피언스 엔진 미구현 → 위력 50×(1+쓰러진 아군 수) 직접 지정.
+    if (window.calc.toID(side.move) === 'lastrespects') {
+      opts.overrides = Object.assign({}, opts.overrides, {basePower: 50 * (1 + (side.alliesFainted || 0))});
+    }
     return new Move(gen(), side.move, opts);
   }
 
