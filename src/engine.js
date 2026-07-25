@@ -131,6 +131,15 @@
     if (weather === 'Rain') return moveType === 'Water' ? 1.5 : moveType === 'Fire' ? 0.5 : 1;
     return 1;
   }
+  // 필드의 "일반 타입보정"(같은 타입 기술 ×1.3, 미스트필드는 드래곤 ×0.5). 무브 고유 위력상승과 분리하기 위함.
+  function terrainTypeMultOf(moveType, terrain, grounded) {
+    if (!terrain || !grounded) return 1;
+    if ((terrain === 'Electric' && moveType === 'Electric') ||
+        (terrain === 'Grassy' && moveType === 'Grass') ||
+        (terrain === 'Psychic' && moveType === 'Psychic')) return 1.3;
+    if (terrain === 'Misty' && moveType === 'Dragon') return 0.5;
+    return 1;
+  }
   const koAbility = en => (window.KO && window.KO.koName.ability && window.KO.koName.ability[en]) || en;
   const koItem = en => (window.KO && window.KO.koName.item && window.KO.koName.item[en]) || en;
 
@@ -159,24 +168,29 @@
     const single = bp * attack * (stabMod / 4096) * (finalMod / 4096) * weatherMult * burnMult;
     const value = Math.max(0, Math.floor(single) * hits);
 
-    // ── 배율 분해(표시용) — 필드/특성/도구를 엔진 재호출 비율로 이름과 함께 뽑는다 ──
-    const noTerr = buildField(Object.assign({}, spec.field, {terrain: null}));
+    // ── 배율 분해(표시용) ──
+    // 필드의 "일반 타입보정(×1.3/×0.5)"만 필드로 빼고, 와이드포스처럼 필드에서 위력 자체가
+    // 오르는 무브 고유 효과는 위력에 남긴다. 특성은 엔진 재호출 비율로 뽑는다.
+    const grounded = calc.isGrounded ? calc.isGrounded(attacker, field) : true;
+    const terrainTypeMult = terrainTypeMultOf(move.type, spec.field.terrain, grounded);
+
     const neutral = attacker.clone(); neutral.ability = 'Pressure'; neutral.abilityOn = false;
     const d2 = {};
-    const bpBase = calc.calculateBasePowerChampions(g, neutral, dummy, move, noTerr, false, d2, 0);   // 특성·필드 뺀 기본 위력
-    const bpNoTerr = calc.calculateBasePowerChampions(g, attacker, dummy, move, noTerr, false, d2, 0); // 필드만 뺀 위력
-    const atkBase = calc.calculateAttackChampions(g, neutral, dummy, move, noTerr, d2, false);          // 특성 뺀 공격
+    const bpNeutral = calc.calculateBasePowerChampions(g, neutral, dummy, move, field, false, d2, 0); // 특성만 뺀 위력(필드·무브특효 포함)
+    const atkNeutral = calc.calculateAttackChampions(g, neutral, dummy, move, field, d2, false);       // 특성 뺀 공격
 
     const r2 = x => Math.round(x * 100) / 100;
     const cat = move.category === 'Special' ? '특공' : '공격';
+    const abilityBpMult = bpNeutral ? bp / bpNeutral : 1;
+    const abilityMult = (atkNeutral ? attack / atkNeutral : 1) * abilityBpMult;
+    const shownBp = Math.round(bp / (terrainTypeMult * abilityBpMult)); // 무브특효 포함, 필드·특성 제외
+
     const factors = [];
-    factors.push({num: `${cat} ${atkBase}`});
-    factors.push({num: `위력 ${bpBase}`});
+    factors.push({num: `${cat} ${atkNeutral}`});
+    factors.push({num: `위력 ${shownBp}`});
     if (stabMod !== 4096) factors.push({label: '자속', mult: r2(stabMod / 4096)});
-    const abilityMult = (atkBase ? attack / atkBase : 1) * (bpBase ? bpNoTerr / bpBase : 1);
     if (Math.abs(abilityMult - 1) > 0.005) factors.push({label: koAbility(attacker.ability), mult: r2(abilityMult)});
-    const terrainMult = bpNoTerr ? bp / bpNoTerr : 1;
-    if (Math.abs(terrainMult - 1) > 0.005) factors.push({label: TERRAIN_KO[spec.field.terrain] || '필드', mult: r2(terrainMult)});
+    if (Math.abs(terrainTypeMult - 1) > 0.005) factors.push({label: TERRAIN_KO[spec.field.terrain] || '필드', mult: r2(terrainTypeMult)});
     if (weatherMult !== 1) factors.push({label: WEATHER_KO[spec.field.weather] || '날씨', mult: r2(weatherMult)});
     if (burnMult !== 1) factors.push({label: '화상', mult: 0.5});
     const itemMult = finalMod / 4096;
