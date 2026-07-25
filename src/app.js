@@ -397,7 +397,5 @@
   buildControls();
   $input.addEventListener('input', () => { render(); updateSuggest(); });
 
-  // 시작 시 첫 예시를 채워 결과를 보여 준다.
-  $input.value = EXAMPLES[0];
   render();
 })();
