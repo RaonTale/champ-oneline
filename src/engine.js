@@ -140,6 +140,8 @@
     if (terrain === 'Misty' && moveType === 'Dragon') return 0.5;
     return 1;
   }
+  // 상대(또는 자신) 무게에 따라 위력이 변하는 기술 — 결정력 모드엔 상대가 없어 더미(100kg) 기준으로 표시.
+  const WEIGHT_MOVES = new Set(['grassknot', 'lowkick', 'heavyslam', 'heatcrash']);
   const koAbility = en => (window.KO && window.KO.koName.ability && window.KO.koName.ability[en]) || en;
   const koItem = en => (window.KO && window.KO.koName.item && window.KO.koName.item[en]) || en;
 
@@ -185,9 +187,10 @@
     const abilityMult = (atkNeutral ? attack / atkNeutral : 1) * abilityBpMult;
     const shownBp = Math.round(bp / (terrainTypeMult * abilityBpMult)); // 무브특효 포함, 필드·특성 제외
 
+    const weightBased = WEIGHT_MOVES.has(calc.toID(move.name));
     const factors = [];
     factors.push({num: `${cat} ${atkNeutral}`});
-    factors.push({num: `위력 ${shownBp}`});
+    factors.push({num: `위력 ${shownBp}${weightBased ? '(상대무게 100kg 기준)' : ''}`});
     if (stabMod !== 4096) factors.push({label: '자속', mult: r2(stabMod / 4096)});
     if (Math.abs(abilityMult - 1) > 0.005) factors.push({label: koAbility(attacker.ability), mult: r2(abilityMult)});
     if (Math.abs(terrainTypeMult - 1) > 0.005) factors.push({label: TERRAIN_KO[spec.field.terrain] || '필드', mult: r2(terrainTypeMult)});
