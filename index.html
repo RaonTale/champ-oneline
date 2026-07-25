@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>챔피언스 한 줄 계산기</title>
+  <meta name="description" content="포켓몬 챔피언스 전용 계산기. 한 줄만 입력하면 데미지·결정력·내구력이 바로 나옵니다. 능력 포인트 0~32, 테라스탈 없음 규칙 반영." />
+  <meta name="theme-color" content="#d33d3d" />
+
+  <!-- 공유 미리보기 (카톡·트위터·디스코드 등) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="챔피언스 한 줄 계산기" />
+  <meta property="og:title" content="챔피언스 한 줄 계산기" />
+  <meta property="og:description" content="한 줄만 입력하면 데미지·결정력·내구력이 바로 나오는 포켓몬 챔피언스 계산기." />
+  <meta property="og:locale" content="ko_KR" />
+  <meta property="og:url" content="https://raontale.github.io/champ-oneline/" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="챔피언스 한 줄 계산기" />
+  <meta name="twitter:description" content="한 줄 입력으로 데미지·결정력·내구력 계산." />
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <!-- 저장된 테마를 렌더 전에 적용해 깜빡임 방지 -->
+  <script>
+    try { var t = localStorage.getItem('champcalc-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <button id="themeToggle" class="themeToggle" type="button" aria-label="테마 전환"></button>
+    <header class="head">
+      <h1>챔피언스 <span class="hl">한 줄</span> 계산기</h1>
+      <p class="subtitle">포켓몬 <b>챔피언스</b> 규칙 · 한 줄 입력 · 데미지 / 결정력 / 내구력</p>
+    </header>
+
+    <div id="controls" class="controls"></div>
+
+    <section class="inputCard">
+      <input id="input" type="text" autocomplete="off" spellcheck="false"
+             placeholder="예) a32+ 한카리아스 지진 vs h32 b32+ 더시마사리" />
+      <div id="hint" class="hint"></div>
+      <div id="suggest" class="suggest" role="listbox"></div>
+    </section>
+
+    <section id="result" class="result" aria-live="polite"></section>
+
+    <section class="examples">
+      <span class="examplesLabel">예시</span>
+      <div id="chips" class="chips"></div>
+    </section>
+
+    <details class="help">
+      <summary>입력법 도움말</summary>
+      <div class="helpBody">
+        <p>포켓몬 이름만 필수. 나머지(능력 포인트·성격·도구·특성·날씨·필드·랭크업)는 <b>띄어쓰기</b>로 구분해 한 줄에 적습니다.</p>
+        <ul>
+          <li><b>모드 자동 판별</b>
+            <ul>
+              <li><b>데미지</b> — <code>공격정보 기술 vs 방어정보</code> &nbsp;(<code>vs</code> · <code>-&gt;</code> · <code>=&gt;</code> 가능)</li>
+              <li><b>결정력</b> — <code>공격정보 기술</code> &nbsp;(vs 없이 기술만)</li>
+              <li><b>내구력</b> — <code>vs 방어정보</code> &nbsp;(맨 앞에 vs)</li>
+            </ul>
+          </li>
+          <li><b>능력 포인트</b> — 챔피언스는 노력치 대신 0~32. <code>a32</code>(공격 32), <code>c32</code>(특공), <code>h32 b32</code> 처럼. 한글로 <code>공32 방32</code> 도 가능. 성격 보정은 뒤에 <code>+</code>/<code>-</code> → <code>a32+</code>. 여러 능력치를 묶어 <code>hd32+</code>(= <code>h32 d32+</code>), <code>hb32</code> 처럼도 됩니다 (성격 보정은 체력이 아닌 능력치에 적용). 한/영 전환 없이 한글 자판 그대로 <code>ㅁ32+</code>(=a), <code>ㅗ</code>(h) <code>ㅠ</code>(b) <code>ㅊ</code>(c) <code>ㅇ</code>(d) <code>ㄴ</code>(s) 도 인식합니다</li>
+          <li><b>랭크업</b> — <code>+2</code>, <code>-1</code> (숫자 1~6)</li>
+          <li><b>메가진화</b> — <code>리자몽Y</code> / <code>메가입치트</code> 처럼 폼 이름을 직접, 또는 도구로 <code>가디안 가디안나이트</code></li>
+          <li><b>날씨/필드</b> — 입력창 위 <b>날씨·벽 토글</b>로 켜거나(같은 날씨 다시 누르면 꺼짐), 글로 <code>맑음</code> <code>비</code> <code>모래</code> <code>눈</code> · <code>일렉트릭필드</code> <code>사이코필드</code> 등. 글에 날씨/벽을 적으면 해당 토글이 자동으로 켜져(🔒) 고정됩니다. 가뭄 같은 특성명을 쓰면 날씨도 함께 적용</li>
+          <li><b>도구·특성·상태이상</b> — <code>생명의구슬</code> <code>돌격조끼</code>… · <code>화상</code> <code>맹독</code> 등</li>
+          <li><b>특성 선택</b> — 결과 위에 특성을 보여줍니다. 결정력=공격 특성(왼쪽), 내구=방어 특성(오른쪽), 데미지=양쪽. 특성이 여러 개면 <b>클릭해서 바꿀 수 있고</b>(예: 마릴리 두꺼운지방↔천하장사↔초식), 메가처럼 1개뿐이면 🔒로 잠깁니다</li>
+          <li><b>기타</b> — <code>3타</code>(연타, 기술별 최대까지 · 찍찍베기는 <code>10타</code>), <code>급소</code>, <code>분산</code>(더블 광역기), <code>리플렉터</code>/<code>빛의장막</code>, <code>50%</code>(잔여 체력)</li>
+        </ul>
+        <p class="warn">챔피언스에 없는 <b>테라스탈·다이맥스</b>는 입력해도 무시하고 알려줍니다.</p>
+      </div>
+    </details>
+
+    <footer class="foot">
+      계산 엔진 : <a href="https://github.com/smogon/damage-calc" target="_blank" rel="noopener">@smogon/calc</a> (Champions)
+      · 한글 데이터 : 전국도감 프로젝트 · 아이디어 :
+      <a href="https://tiredhermitcrab.github.io/SimplePokeCalc/" target="_blank" rel="noopener">간단 포켓몬 계산기</a>
+    </footer>
+  </main>
+
+  <!-- @smogon/calc (Champions=gen 0). 참조 champions.html 과 동일한 require/exports 셰임. -->
+  <script>
+    this.__createBinding = function (o, m, k) { o[k] = m[k]; };
+    var calc = exports = {};
+    function require() { return exports; }
+  </script>
+  <script src="vendor/calc/util.js"></script>
+  <script src="vendor/calc/stats.js"></script>
+  <script src="vendor/calc/data/species.js"></script>
+  <script src="vendor/calc/data/types.js"></script>
+  <script src="vendor/calc/data/natures.js"></script>
+  <script src="vendor/calc/data/abilities.js"></script>
+  <script src="vendor/calc/data/moves.js"></script>
+  <script src="vendor/calc/data/items.js"></script>
+  <script src="vendor/calc/data/index.js"></script>
+  <script src="vendor/calc/move.js"></script>
+  <script src="vendor/calc/pokemon.js"></script>
+  <script src="vendor/calc/field.js"></script>
+  <script src="vendor/calc/items.js"></script>
+  <script src="vendor/calc/mechanics/util.js"></script>
+  <script src="vendor/calc/mechanics/champions.js"></script>
+  <script src="vendor/calc/calc.js"></script>
+  <script src="vendor/calc/desc.js"></script>
+  <script src="vendor/calc/result.js"></script>
+  <script src="vendor/calc/adaptable.js"></script>
+  <script src="vendor/calc/index.js"></script>
+  <script>window.calc = exports;</script>
+
+  <!-- 앱 -->
+  <script src="src/data/ko.js"></script>
+  <script src="src/parse.js"></script>
+  <script src="src/engine.js"></script>
+  <script src="src/describe.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,399 @@
+:root {
+  --bg: #f4f5f8;
+  --card: #ffffff;
+  --ink: #1a1c22;
+  --muted: #6b7280;
+  --line: #e4e6eb;
+  --accent: #d33d3d;      /* 챔피언스 레드 */
+  --accent-soft: #fdecec;
+  --ok: #1f9d55;
+  --ok-soft: #9adcb8;     /* 난수 구간용 연한 초록 */
+  --warn: #b7791f;
+  --warn-soft: #fdf6e3;
+  --unknown: #c53030;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
+  --radius: 16px;
+}
+
+/* 다크 테마 변수 묶음. 수동 지정(data-theme=dark)일 때 적용 */
+:root[data-theme="dark"] {
+  --bg: #14161a;
+  --card: #1e2127;
+  --ink: #e8eaed;
+  --muted: #9aa0aa;
+  --line: #2c303a;
+  --accent: #ff5a5a;
+  --accent-soft: #33211f;
+  --ok: #4ade80;
+  --ok-soft: #2f6b48;
+  --warn: #e0b445;
+  --warn-soft: #2a2617;
+  --unknown: #ff6b6b;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.4);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161a;
+    --card: #1e2127;
+    --ink: #e8eaed;
+    --muted: #9aa0aa;
+    --line: #2c303a;
+    --accent: #ff5a5a;
+    --accent-soft: #33211f;
+    --ok: #4ade80;
+    --ok-soft: #2f6b48;
+    --warn: #e0b445;
+    --warn-soft: #2a2617;
+    --unknown: #ff6b6b;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.4);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  position: relative;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+/* 라이트/다크 전환 버튼 (우측 상단) */
+.themeToggle {
+  position: absolute;
+  top: 26px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .12s, transform .05s;
+}
+.themeToggle:hover { border-color: var(--accent); }
+.themeToggle:active { transform: scale(.94); }
+
+.head { text-align: center; margin-bottom: 26px; }
+.head h1 {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+.head h1 .hl { color: var(--accent); }
+.subtitle { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+.subtitle b { color: var(--accent); }
+
+/* 상단 토글 (날씨 / 벽) */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+.ctrlGroup { display: flex; align-items: center; gap: 8px; }
+.ctrlLabel { font-size: 12px; font-weight: 700; color: var(--muted); }
+.seg {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: var(--shadow);
+}
+.segBtn {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+  white-space: nowrap;
+}
+.segBtn:hover { color: var(--ink); }
+.segBtn.on { background: var(--accent); color: #fff; }
+.segBtn.toggle.on { background: #3a72e0; }
+/* 입력창 텍스트로 켜진 토글 — 자물쇠로 "글로 고정됨" 표시 */
+.segBtn.bytext::after { content: " 🔒"; font-size: 10px; }
+
+/* 입력 */
+.inputCard {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 8px;
+}
+
+/* 자동완성 드롭다운 */
+.suggest {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.sItemRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+}
+.sItemRow.active, .sItemRow:hover { background: var(--bg); }
+.sName { font-size: 14.5px; font-weight: 600; color: var(--ink); }
+.sCat {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 999px;
+  color: #fff;
+}
+.sPoke { background: var(--accent); }
+.sMove { background: #3a72e0; }
+.sItem { background: #e0803a; }
+.sAbil { background: #2f9e6a; }
+#input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 18px;
+  padding: 14px 12px;
+  font-family: inherit;
+}
+#input::placeholder { color: var(--muted); opacity: .7; }
+
+.hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 6px;
+}
+.hint:not(:empty) { padding: 4px 6px 8px; }
+.hint .unknown, .hint .note {
+  font-size: 12.5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  line-height: 1.4;
+}
+.hint .unknown { background: var(--accent-soft); color: var(--unknown); font-weight: 600; }
+.hint .note { background: var(--warn-soft); color: var(--warn); }
+
+/* 결과 */
+.result {
+  margin-top: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px 24px;
+  min-height: 128px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.placeholder { color: var(--muted); text-align: center; font-size: 15px; }
+.error { color: var(--unknown); font-weight: 600; text-align: center; }
+
+.mode {
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 11px;
+  border-radius: 999px;
+  color: #fff;
+  margin-bottom: 12px;
+  letter-spacing: .02em;
+}
+.mode-damage { background: var(--accent); }
+.mode-firepower { background: #e0803a; }
+.mode-durability { background: #3a72e0; }
+
+.matchup {
+  font-size: 15px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  word-break: keep-all;
+}
+
+/* 특성 바 — 왼쪽 공격자 / 오른쪽 방어자 */
+.abilityBar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.abSide { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.abSide.def { align-items: flex-end; text-align: right; }
+.abSideLabel { font-size: 11px; font-weight: 700; color: var(--muted); }
+.abChips { display: flex; flex-wrap: wrap; gap: 5px; }
+.abBtn {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+}
+.abBtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* 챔피언스는 특성 1개 고정 → 눌린 상태로 잠금(클릭 불가) */
+.abBtn.locked { cursor: default; }
+.abBtn.locked.on::before { content: "🔒 "; font-size: 10px; }
+.abBtn.pick:hover { border-color: var(--accent); color: var(--ink); }
+.abBtn.pick.on:hover { color: #fff; }
+.main {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  word-break: keep-all;
+}
+.verdict {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ok);
+}
+
+/* 데미지 바 — 맞은 뒤 남는 체력 게이지 (초록=생존HP, 빗금=난수구간, 빨강바탕=깎임) */
+.dmgBar {
+  position: relative;
+  height: 22px;
+  margin-top: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--accent);       /* 깎인 체력 = 빨강 바탕 */
+}
+.dmgBarHp {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: var(--ok);           /* 확정으로 남는 체력 = 초록 */
+}
+.dmgBarHpU {                       /* 난수로 갈리는 구간 = 연한 초록 (남을 수도 있음) */
+  position: absolute; top: 0; bottom: 0;
+  background: var(--ok-soft);
+}
+.dmgBarTxt {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .45);
+  letter-spacing: -.01em;
+}
+.dmgBar.lethal { background: var(--accent); }   /* 확정 기절이면 초록 0 → 전체 빨강 */
+
+.sub {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* 예시 칩 */
+.examples { margin-top: 22px; }
+.examplesLabel {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12.5px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color .12s, transform .05s;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip:active { transform: scale(.97); }
+
+/* 도움말 */
+.help {
+  margin-top: 22px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 4px 20px;
+}
+.help summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding: 12px 0;
+  font-size: 15px;
+  list-style: none;
+}
+.help summary::before { content: "▸ "; color: var(--accent); }
+.help[open] summary::before { content: "▾ "; }
+.helpBody { font-size: 13.5px; color: var(--ink); padding-bottom: 14px; }
+.helpBody ul { padding-left: 20px; margin: 8px 0; }
+.helpBody li { margin: 5px 0; }
+.helpBody code {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 12.5px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  word-break: keep-all;
+}
+.helpBody .warn { color: var(--warn); margin-top: 10px; }
+
+.foot {
+  margin-top: 32px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.foot a { color: var(--muted); }
+.foot a:hover { color: var(--accent); }
+
+@media (max-width: 480px) {
+  .wrap { padding: 20px 14px 48px; }
+  .main { font-size: 24px; }
+  #input { font-size: 16px; }
+}
