@@ -48,7 +48,7 @@
     {key: 'Snow', label: '싸라기눈'},
   ];
   // 클릭으로 켠 수동 상태. 텍스트에 날씨/벽이 적히면 그쪽이 우선이며 토글에 자동 반영된다.
-  const control = {weather: '', reflect: false, lightScreen: false, pick: {atk: null, def: null}};
+  const control = {weather: '', reflect: false, lightScreen: false};
   const weatherBtn = {};   // key → button
   const screenBtn = {};    // key(reflect/lightScreen) → button
 
@@ -123,58 +123,7 @@
     if (textReflect || control.reflect) spec.field.defenderSide.isReflect = true;
     if (textLight || control.lightScreen) spec.field.defenderSide.isLightScreen = true;
 
-    // 특성 선택(복수 특성일 때만 의미). 현재 포켓몬과 일치하는 선택만 적용.
-    for (const [role, key] of [['atk', 'attacker'], ['def', 'defender']]) {
-      const pick = control.pick[role];
-      const side = spec[key];
-      if (pick && side && pick.sp === side.species) {
-        side.ability = pick.en;
-        side.abilityOn = true;
-      }
-    }
-
     syncControlsUI(textWeather, textReflect, textLight);
-  }
-
-  // ── 특성 표시 ──────────────────────────────────────────────────────────────
-  // 종족의 전체 특성 로스터 [{en, ko}] (슬롯 0,1,H 순). ko.js가 쇼다운 도감 기준으로 담아 둔 것.
-  function sideAbilities(speciesEn) {
-    return (window.KO.speciesAbilities && window.KO.speciesAbilities[speciesEn]) || [];
-  }
-
-  // 실제 계산에 쓰이는 특성(입력/선택/종족기본 순).
-  function usedAbility(side, role) {
-    const pick = control.pick[role];
-    if (pick && pick.sp === side.species) return pick.en;
-    if (side.ability) return side.ability;
-    const list = sideAbilities(side.species);
-    return list[0] ? list[0].en : null;
-  }
-
-  function sideAbilityHTML(side, role, label) {
-    if (!side || !side.species) return '<div class="abSide"></div>';
-    const list = sideAbilities(side.species);
-    if (!list.length) return '<div class="abSide"></div>';
-    const used = usedAbility(side, role);
-    const single = list.length <= 1;
-    const chips = list.map(a => {
-      const on = a.en === used;
-      const cls = ['abBtn', on ? 'on' : '', single ? 'locked' : 'pick'].filter(Boolean).join(' ');
-      const attrs = single ? 'disabled' : `data-role="${role}" data-ab="${encodeURIComponent(a.en)}"`;
-      const rate = a.rate != null ? `<span class="abRate">${a.rate}%</span>` : '';
-      return `<button type="button" class="${cls}" ${attrs}>${esc(a.ko)}${rate}</button>`;
-    }).join('');
-    return `<div class="abSide ${role}"><span class="abSideLabel">${label}</span><div class="abChips">${chips}</div></div>`;
-  }
-
-  // 모드별로 필요한 쪽 특성만 표시. 결정력=공격, 내구=방어, 데미지=양쪽.
-  function abilityBarHTML(spec) {
-    const showAtk = spec.mode === 'damage' || spec.mode === 'firepower';
-    const showDef = spec.mode === 'damage' || spec.mode === 'durability';
-    if (!showAtk && !showDef) return '';
-    const left = showAtk ? sideAbilityHTML(spec.attacker, 'atk', '공격 특성') : '<div class="abSide"></div>';
-    const right = showDef ? sideAbilityHTML(spec.defender, 'def', '방어 특성') : '<div class="abSide"></div>';
-    return `<div class="abilityBar">${left}${right}</div>`;
   }
 
   // 데미지 바 — 맞은 뒤 "남는 체력"을 HP 게이지로. 초록=확정 생존 HP,
@@ -195,18 +144,6 @@
       `<div class="dmgBarHp" style="width:${green}%"></div>` +
       `<div class="dmgBarTxt">${esc(label)}</div>` +
       `</div>`;
-  }
-
-  function bindAbilityPicks(spec) {
-    $result.querySelectorAll('.abBtn.pick').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const role = btn.getAttribute('data-role');
-        const en = decodeURIComponent(btn.getAttribute('data-ab'));
-        const sp = role === 'atk' ? spec.attacker.species : spec.defender.species;
-        control.pick[role] = {sp, en};
-        render();
-      });
-    });
   }
 
   // ── 렌더 ───────────────────────────────────────────────────────────────────
@@ -251,13 +188,11 @@
     const parts = [];
     parts.push(`<div class="mode mode-${spec.mode}">${MODE_LABEL[spec.mode]}</div>`);
     parts.push(`<div class="matchup">${esc(desc.head)}</div>`);
-    parts.push(abilityBarHTML(spec));
     parts.push(`<div class="main">${esc(desc.main)}</div>`);
     if (desc.verdict) parts.push(`<div class="verdict">${esc(desc.verdict)}</div>`);
     if (desc.bar) parts.push(dmgBarHTML(desc.bar));
     if (desc.sub) parts.push(`<div class="sub">${esc(desc.sub)}</div>`);
     $result.innerHTML = parts.join('');
-    bindAbilityPicks(spec);
 
     renderHint(spec);
   }

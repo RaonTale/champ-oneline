@@ -252,35 +252,6 @@ body {
   word-break: keep-all;
 }
 
-/* 특성 바 — 왼쪽 공격자 / 오른쪽 방어자 */
-.abilityBar {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.abSide { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
-.abSide.def { align-items: flex-end; text-align: right; }
-.abSideLabel { font-size: 11px; font-weight: 700; color: var(--muted); }
-.abChips { display: flex; flex-wrap: wrap; gap: 5px; }
-.abBtn {
-  font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  padding: 5px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--muted);
-  cursor: pointer;
-}
-.abBtn .abRate { margin-left: 5px; font-size: 11px; font-weight: 600; opacity: .7; }
-.abBtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-/* 챔피언스는 특성 1개 고정 → 눌린 상태로 잠금(클릭 불가) */
-.abBtn.locked { cursor: default; }
-.abBtn.locked.on::before { content: "🔒 "; font-size: 10px; }
-.abBtn.pick:hover { border-color: var(--accent); color: var(--ink); }
-.abBtn.pick.on:hover { color: #fff; }
 .main {
   font-size: 28px;
   font-weight: 800;
