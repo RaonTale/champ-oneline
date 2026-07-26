@@ -32,6 +32,8 @@
   };
   const COMBINED_STAT = /^([habcds체공방스ㅗㅁㅠㅊㅇㄴ]{2,})(\d{1,3})([+\-])?$/i;
   const BOOST_TOKEN = /^([+\-])([1-6])$/;
+  // 능력치별 랭크업: +2b32 = 방어 랭크+2·32포인트 (바디프레스·어시스트파워 등). 성격기호 옵션.
+  const RANK_STAT_TOKEN = /^([+\-])([1-6])([habcds체공방스ㅗㅁㅠㅊㅇㄴ])(\d{1,3})?([+\-])?$/i;
   const HITS_TOKEN = /^([1-9]|1[0-9])타$/; // 1~19타 (실제 상한은 기술별로 검증)
   const HP_TOKEN = /^(?:잔체력)?(\d{1,3})%$/;
 
@@ -95,6 +97,7 @@
       hpPercent: null,
       alliesFainted: 0,
       typeOverride: null,
+      boosts: {},
       fullInvest: false,
       unknown: [],
       notes: [],
@@ -152,6 +155,19 @@
 
       // 3) 랭크업 / 연타 / 잔여 체력 / 급소 / 보정 표현
       let m;
+      // 능력치별 랭크업 (+2b32): 방어 랭크+2·32포인트. 바디프레스·어시스트파워 등에 필요.
+      if ((m = RANK_STAT_TOKEN.exec(key))) {
+        const st = STAT_CHAR[m[3].toLowerCase()] || STAT_CHAR[m[3]];
+        if (st) {
+          side.boosts[st] = Number(m[1] + m[2]);
+          if (m[4] !== undefined) side.sp[st] = Math.min(MAX_SP, Number(m[4]));
+          if (st !== 'hp') {
+            if (m[5] === '+') side.natureHint.plus = st;
+            else if (m[5] === '-') side.natureHint.minus = st;
+          }
+          continue;
+        }
+      }
       if ((m = BOOST_TOKEN.exec(key))) { side.boost = Number(m[1] + m[2]); continue; }
       if ((m = HITS_TOKEN.exec(key))) { side.moveOpts.hits = Number(m[1]); side.hitsToken = token; continue; }
       if ((m = HP_TOKEN.exec(key))) { side.hpPercent = Math.min(100, Number(m[1])); continue; }

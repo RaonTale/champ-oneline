@@ -92,12 +92,21 @@
     return new Move(gen(), side.move, opts);
   }
 
-  // 랭크업 토큰(+2 등)을 기술 분류에 맞는 능력치에 적용한다.
-  // boosts 만 세팅하면 된다 — 엔진이 계산 시점에 반영하고, clone() 도 boosts 를 그대로 넘긴다.
+  // 랭크업을 능력치에 적용한다. 능력치별 랭크(+2b32 → boosts)를 우선 반영하고,
+  // 단순 +2 는 공격측=공격능력치(바디프레스=방어), 방어측=방어능력치에 적용한다.
+  // (어시스트파워/바디프레스는 엔진이 boosts 를 보고 알아서 처리한다.)
   function applyBoosts(attacker, defender, move, atkSide, defSide) {
-    const cat = move.category === 'Special' ? 'Special' : 'Physical';
-    if (atkSide && atkSide.boost) attacker.boosts[ATTACK_STAT[cat]] = atkSide.boost;
-    if (defSide && defSide.boost) defender.boosts[PHYSICAL_DEF[cat]] = defSide.boost;
+    const atkStat = move.named && move.named('Body Press') ? 'def'
+      : (move.category === 'Special' ? 'spa' : 'atk');
+    const defStat = move.category === 'Special' ? 'spd' : 'def';
+    if (atkSide) {
+      for (const st of Object.keys(atkSide.boosts || {})) attacker.boosts[st] = atkSide.boosts[st];
+      if (atkSide.boost) attacker.boosts[atkStat] = atkSide.boost;
+    }
+    if (defSide) {
+      for (const st of Object.keys(defSide.boosts || {})) defender.boosts[st] = defSide.boosts[st];
+      if (defSide.boost) defender.boosts[defStat] = defSide.boost;
+    }
   }
 
   function damage(spec) {
@@ -239,12 +248,15 @@
     const f = spec.field;
 
     const boostMult = b => (b > 0 ? (2 + b) / 2 : b < 0 ? 2 / (2 - b) : 1);
-    const rank = side.boost || 0;
+    // 능력치별 랭크(+2b) 우선, 없으면 단순 +2 를 방어·특방 양쪽에.
+    const b = side.boosts || {};
+    const defRank = b.def != null ? b.def : (side.boost || 0);
+    const spdRank = b.spd != null ? b.spd : (side.boost || 0);
 
     const hp = side.hpPercent != null ? p.originalCurHP : p.rawStats.hp;
 
-    let def = Math.floor(p.rawStats.def * boostMult(rank));
-    let spd = Math.floor(p.rawStats.spd * boostMult(rank));
+    let def = Math.floor(p.rawStats.def * boostMult(defRank));
+    let spd = Math.floor(p.rawStats.spd * boostMult(spdRank));
 
     const mods = {physical: [], special: []};
     if (f.weather === 'Snow' && p.types.indexOf('Ice') >= 0) {
@@ -271,7 +283,7 @@
       hp,
       physical: Math.floor(hp * def / DURABILITY_K),
       special: Math.floor(hp * spd / DURABILITY_K),
-      def, spd, rank, mods,
+      def, spd, defRank, spdRank, mods,
     };
   }
 
