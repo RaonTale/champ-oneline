@@ -69,7 +69,12 @@
 
   function makePokemon(side) {
     const {Pokemon} = window.calc;
-    const p = new Pokemon(gen(), side.species, toOptions(side));
+    const opts = toOptions(side);
+    // 변환자재/리베로 등 타입 변경: 사용자가 지정한 타입으로 오버라이드
+    if (side.typeOverride && side.typeOverride.length) {
+      opts.overrides = Object.assign({}, opts.overrides, {types: side.typeOverride.slice()});
+    }
+    const p = new Pokemon(gen(), side.species, opts);
     if (side.hpPercent != null) {
       p.originalCurHP = Math.max(1, Math.round(p.rawStats.hp * side.hpPercent / 100));
     }
@@ -150,6 +155,17 @@
   const koAbility = en => (window.KO && window.KO.koName.ability && window.KO.koName.ability[en]) || en;
   const koItem = en => (window.KO && window.KO.koName.item && window.KO.koName.item[en]) || en;
 
+  // 위력업 도구의 데미지 배수(별도 레이어). 생명의구슬은 1.3(게임 5324/4096 대신 관례값).
+  function itemMultOf(itemEn, move) {
+    if (!itemEn) return 1;
+    if (itemEn === 'Life Orb') return 1.3;
+    if (itemEn === 'Muscle Band') return move.category === 'Physical' ? 1.1 : 1;
+    if (itemEn === 'Wise Glasses') return move.category === 'Special' ? 1.1 : 1;
+    const bt = window.calc.getItemBoostType ? window.calc.getItemBoostType(itemEn) : null; // 타입강화 도구(목탄 등) 1.2
+    if (bt && move.hasType && move.hasType(bt)) return 1.2;
+    return 1;
+  }
+
   function firepower(spec) {
     const g = gen();
     const calc = window.calc;
@@ -159,11 +175,15 @@
     const field = buildField(spec.field);
     applyBoosts(attacker, dummy, move, spec.attacker, null); // 랭크업 반영
 
+    // 위력업 도구는 별도 레이어로 분리 → 엔진 계산엔 도구 없는 클론을 쓴다.
+    const noItem = attacker.clone(); noItem.item = '';
+    const itemMult = itemMultOf(attacker.item, move);
+
     const desc = {};
-    const bp = calc.calculateBasePowerChampions(g, attacker, dummy, move, field, false, desc, 0);
-    const attack = calc.calculateAttackChampions(g, attacker, dummy, move, field, desc, false);
-    const stabMod = calc.getStabMod(attacker, move, desc);
-    const finalMods = calc.calculateFinalModsChampions(g, attacker, dummy, move, field, desc, false, 1);
+    const bp = calc.calculateBasePowerChampions(g, noItem, dummy, move, field, false, desc, 0);
+    const attack = calc.calculateAttackChampions(g, noItem, dummy, move, field, desc, false);
+    const stabMod = calc.getStabMod(noItem, move, desc);
+    const finalMods = calc.calculateFinalModsChampions(g, noItem, dummy, move, field, desc, false, 1);
     const finalMod = calc.chainMods(finalMods, 41, 131072);
     const weatherMult = weatherMultOf(move.type, spec.field.weather); // ★ 날씨(base damage 단계) 보정
     // 화상: 물리기 최종 데미지 절반 (근성/속임수 제외) — final damage 단계라 따로 곱한다.
@@ -172,7 +192,7 @@
     const burnMult = applyBurn ? 0.5 : 1;
 
     const hits = move.hits && move.hits > 1 ? move.hits : 1;
-    const single = bp * attack * (stabMod / 4096) * (finalMod / 4096) * weatherMult * burnMult;
+    const single = bp * attack * (stabMod / 4096) * (finalMod / 4096) * weatherMult * burnMult * itemMult;
     const value = Math.max(0, Math.floor(single) * hits);
 
     // ── 배율 분해(표시용) ──
@@ -181,7 +201,7 @@
     const grounded = calc.isGrounded ? calc.isGrounded(attacker, field) : true;
     const terrainTypeMult = terrainTypeMultOf(move.type, spec.field.terrain, grounded);
 
-    const neutral = attacker.clone(); neutral.ability = 'Pressure'; neutral.abilityOn = false;
+    const neutral = noItem.clone(); neutral.ability = 'Pressure'; neutral.abilityOn = false;
     const d2 = {};
     const bpNeutral = calc.calculateBasePowerChampions(g, neutral, dummy, move, field, false, d2, 0); // 특성만 뺀 위력(필드·무브특효 포함)
     const atkNeutral = calc.calculateAttackChampions(g, neutral, dummy, move, field, d2, false);       // 특성 뺀 공격
@@ -201,9 +221,8 @@
     if (Math.abs(terrainTypeMult - 1) > 0.005) factors.push({label: TERRAIN_KO[spec.field.terrain] || '필드', mult: r2(terrainTypeMult)});
     if (weatherMult !== 1) factors.push({label: WEATHER_KO[spec.field.weather] || '날씨', mult: r2(weatherMult)});
     if (burnMult !== 1) factors.push({label: '화상', mult: 0.5});
-    const itemMult = finalMod / 4096;
     if (Math.abs(itemMult - 1) > 0.005) {
-      factors.push({label: spec.attacker.item ? koItem(spec.attacker.item) : '도구', mult: r2(itemMult)});
+      factors.push({label: koItem(attacker.item), mult: r2(itemMult)});
     }
     if (hits > 1) factors.push({num: `${hits}타`});
 

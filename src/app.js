@@ -259,7 +259,9 @@
         let e = byId.get(id);
         if (!e) {
           const name = koName[en] || aliasKey;
-          e = {cat: dictKey, catKo, en, name, nkey: normKo(name), keys: new Set([normKo(name)])};
+          // 메가스톤(○○나이트)은 잘 안 쓰여서 자동완성 하위로 (메가리자몽Y가 리자몽나이트Y보다 위)
+          const mega = dictKey === 'item' && /나이트[XY]?$/.test(name);
+          e = {cat: dictKey, catKo, en, name, nkey: normKo(name), mega, keys: new Set([normKo(name)])};
           byId.set(id, e);
         }
         e.keys.add(aliasKey);
@@ -296,10 +298,13 @@
       else if (con) contains.push(e);
     }
     const byCat = (a, b) =>
+      (a.mega ? 1 : 0) - (b.mega ? 1 : 0) ||          // 메가도구는 뒤로
       CAT_ORDER[a.cat] - CAT_ORDER[b.cat] ||
       a.name.length - b.name.length ||
       a.name.localeCompare(b.name);
-    prefix.sort((a, b) => (a.nkey.startsWith(q) ? 0 : 1) - (b.nkey.startsWith(q) ? 0 : 1) || byCat(a, b));
+    prefix.sort((a, b) =>
+      (a.mega ? 1 : 0) - (b.mega ? 1 : 0) ||          // 메가도구는 뒤로 (메가리자몽Y > 리자몽나이트Y)
+      (a.nkey.startsWith(q) ? 0 : 1) - (b.nkey.startsWith(q) ? 0 : 1) || byCat(a, b));
     contains.sort(byCat);
     return prefix.concat(contains).slice(0, 8); // 앞글자 일치 우선, 그 뒤 부분일치
   }

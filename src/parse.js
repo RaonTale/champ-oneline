@@ -52,6 +52,14 @@
     독: 'psn', 맹독: 'tox', 화상: 'brn', 마비: 'par',
     잠듦: 'slp', 수면: 'slp', 잠: 'slp', 얼음: 'frz', 동상: 'frz',
   };
+  // "~타입" 오버라이드용 (변환자재/리베로). 짧은 표기 → 영문 타입.
+  const TYPE_EN = {
+    노말: 'Normal', 불: 'Fire', 불꽃: 'Fire', 물: 'Water', 전기: 'Electric', 풀: 'Grass',
+    얼음: 'Ice', 격투: 'Fighting', 독: 'Poison', 땅: 'Ground', 지면: 'Ground', 비행: 'Flying',
+    에스퍼: 'Psychic', 초능력: 'Psychic', 사이코: 'Psychic', 벌레: 'Bug', 바위: 'Rock', 암석: 'Rock',
+    고스트: 'Ghost', 유령: 'Ghost', 드래곤: 'Dragon', 용: 'Dragon', 악: 'Dark', 강철: 'Steel', 철: 'Steel',
+    페어리: 'Fairy', 요정: 'Fairy',
+  };
   // 방어측에 붙는 필드 효과
   const DEF_SIDE = {
     리플렉터: 'isReflect', 리플: 'isReflect',
@@ -86,6 +94,7 @@
       status: null, statusKo: null,
       hpPercent: null,
       alliesFainted: 0,
+      typeOverride: null,
       fullInvest: false,
       unknown: [],
       notes: [],
@@ -121,6 +130,15 @@
       if (GLOBAL_FLAG[key]) { field.global[GLOBAL_FLAG[key]] = true; continue; }
       if (key === '분산' || key === '더블') { field.gameType = 'Doubles'; continue; }
       if (STATUS[key]) { side.status = STATUS[key]; side.statusKo = token; continue; }
+      // "~타입" 타입 오버라이드 (변환자재/리베로 등): 불타입, 물타입 → 최대 2개
+      if (/타입$/.test(key)) {
+        const en = TYPE_EN[key.slice(0, -2)];
+        if (en) {
+          side.typeOverride = side.typeOverride || [];
+          if (side.typeOverride.indexOf(en) < 0 && side.typeOverride.length < 2) side.typeOverride.push(en);
+          continue;
+        }
+      }
 
       // 2) 챔피언스에 없는 기믹은 조용히 무시하지 않고 알려준다
       if (/테라$/.test(key) || key === '테라스탈') {
