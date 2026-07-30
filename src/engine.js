@@ -213,7 +213,14 @@
     const neutral = noItem.clone(); neutral.ability = 'Pressure'; neutral.abilityOn = false;
     const d2 = {};
     const bpNeutral = calc.calculateBasePowerChampions(g, neutral, dummy, move, field, false, d2, 0); // 특성만 뺀 위력(필드·무브특효 포함)
-    const atkNeutral = calc.calculateAttackChampions(g, neutral, dummy, move, field, d2, false);       // 특성 뺀 공격
+    const atkNeutral = calc.calculateAttackChampions(g, neutral, dummy, move, field, d2, false);       // 특성 뺀 공격(랭크 포함)
+    // 랭크업은 공격 수치에 녹이지 않고 별도 배율로 분리한다. (바디프레스는 방어 랭크가 대상)
+    // 엔진은 boosts[stat] 가 숫자여야 하므로 키를 유지한 채 0으로 초기화한다.
+    const noBoost = neutral.clone();
+    noBoost.boosts = {hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0};
+    const d3 = {};
+    const atkNoBoost = calc.calculateAttackChampions(g, noBoost, dummy, move, field, d3, false);        // 랭크·특성 뺀 공격
+    const rankMult = atkNoBoost ? atkNeutral / atkNoBoost : 1;
 
     const r2 = x => Math.round(x * 100) / 100;
     const cat = move.category === 'Special' ? '특공' : '공격';
@@ -223,8 +230,9 @@
 
     const weightBased = WEIGHT_MOVES.has(calc.toID(move.name));
     const factors = [];
-    factors.push({num: `${cat} ${atkNeutral}`});
+    factors.push({num: `${cat} ${atkNoBoost}`});
     factors.push({num: `위력 ${shownBp}${weightBased ? '(상대무게 100kg 기준)' : ''}`});
+    if (Math.abs(rankMult - 1) > 0.005) factors.push({label: '랭크', mult: r2(rankMult)});
     if (stabMod !== 4096) factors.push({label: '자속', mult: r2(stabMod / 4096)});
     if (Math.abs(abilityMult - 1) > 0.005) factors.push({label: koAbility(attacker.ability), mult: r2(abilityMult)});
     if (Math.abs(terrainTypeMult - 1) > 0.005) factors.push({label: TERRAIN_KO[spec.field.terrain] || '필드', mult: r2(terrainTypeMult)});

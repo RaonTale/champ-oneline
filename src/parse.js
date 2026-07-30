@@ -41,7 +41,8 @@
   const COMBINED_STAT = /^([habcds체공방스ㅗㅁㅠㅊㅇㄴ]{2,})(\d{1,3})([+\-])?$/i;
   const BOOST_TOKEN = /^([+\-])([1-6])$/;
   // 능력치별 랭크업: +2b32 = 방어 랭크+2·32포인트 (바디프레스·어시스트파워 등). 성격기호 옵션.
-  const RANK_STAT_TOKEN = /^([+\-])([1-6])([habcds체공방스ㅗㅁㅠㅊㅇㄴ])(\d{1,3})?([+\-])?$/i;
+  // 묶음도 허용: +2ha32+ = 체/공 32포인트·공격 랭크+2·공격 성격보정(체력은 랭크가 없어 건너뜀).
+  const RANK_STAT_TOKEN = /^([+\-])([1-6])([habcds체공방스ㅗㅁㅠㅊㅇㄴ]+)(\d{1,3})?([+\-])?$/i;
   const HITS_TOKEN = /^([1-9]|1[0-9])타$/; // 1~19타 (실제 상한은 기술별로 검증)
   const HP_TOKEN = /^(?:잔체력)?(\d{1,3})%$/;
 
@@ -163,15 +164,34 @@
 
       // 3) 랭크업 / 연타 / 잔여 체력 / 급소 / 보정 표현
       let m;
-      // 능력치별 랭크업 (+2b32): 방어 랭크+2·32포인트. 바디프레스·어시스트파워 등에 필요.
+      // 능력치별 랭크업 (+2b32, +2ha32+): 랭크는 체력을 뺀 능력치에(체력은 랭크가 없음),
+      // 포인트는 지정한 모든 능력치에, 성격 보정은 마지막 비-체력 능력치에 적용.
       if ((m = RANK_STAT_TOKEN.exec(key))) {
-        const st = STAT_CHAR[m[3].toLowerCase()] || STAT_CHAR[m[3]];
-        if (st) {
-          side.boosts[st] = Number(m[1] + m[2]);
-          if (m[4] !== undefined) side.sp[st] = Math.min(MAX_SP, Number(m[4]));
-          if (st !== 'hp') {
-            if (m[5] === '+') side.natureHint.plus = st;
-            else if (m[5] === '-') side.natureHint.minus = st;
+        const stats = [];
+        for (const ch of m[3]) {
+          const st = STAT_CHAR[ch.toLowerCase()] || STAT_CHAR[ch];
+          if (st && stats.indexOf(st) < 0) stats.push(st);
+        }
+        if (stats.length) {
+          const rank = Number(m[1] + m[2]);
+          const natStats = stats.filter(s => s !== 'hp');
+          for (const st of natStats) side.boosts[st] = rank;
+          if (!natStats.length) notes.push(`"${token}" — 체력에는 랭크업이 없습니다.`);
+          if (m[4] !== undefined) {
+            const n0 = Number(m[4]);
+            if (n0 > MAX_SP) {
+              notes.push(`"${token}" — 챔피언스 능력 포인트는 한 능력치당 최대 ${MAX_SP}입니다. ${MAX_SP}로 맞췄습니다.`);
+            }
+            const n = Math.min(MAX_SP, n0);
+            for (const st of stats) side.sp[st] = n;
+          }
+          if (m[5]) {
+            if (!natStats.length) notes.push(`"${token}" — 체력에는 성격 보정이 없습니다.`);
+            else {
+              const target = natStats[natStats.length - 1];
+              if (m[5] === '+') side.natureHint.plus = target;
+              else side.natureHint.minus = target;
+            }
           }
           continue;
         }
