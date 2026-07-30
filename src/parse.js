@@ -9,7 +9,15 @@
 
   const KO = window.KO;
 
-  const normKo = s => String(s).replace(/[\s·・()（）'’.\-]/g, '');
+  // 내부 구두점(공백·중점·괄호·하이픈 등)은 지우되, 랭크/성격 부호로 쓰이는
+  // 맨 앞(+2·-2b32)과 맨 뒤(a32-·hd32+)의 +/- 는 보존한다. (사전 키는 부호가 없어 그대로 매칭)
+  const normKo = s => {
+    s = String(s).trim();
+    const lead = /^[+\-]/.test(s) ? s[0] : '';
+    const tail = /[+\-]$/.test(s) && s.length > lead.length ? s[s.length - 1] : '';
+    const mid = s.slice(lead.length, s.length - (tail ? 1 : 0)).replace(/[\s·・()（）'’.\-]/g, '');
+    return lead + mid + tail;
+  };
 
   // 한글 키보드에서 영문 스탯키가 만드는 자모도 같이 받는다: h→ㅗ a→ㅁ b→ㅠ c→ㅊ d→ㅇ s→ㄴ
   const STAT_KO = {

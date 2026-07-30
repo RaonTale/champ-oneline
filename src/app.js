@@ -28,14 +28,42 @@
   });
   updateThemeBtn();
 
-  const EXAMPLES = [
+  // 예시 풀(전부 오류·미인식 없이 실제 데미지가 나오는 것만). 매 접속 때 랜덤 3개만 보인다.
+  const EXAMPLE_POOL = [
+    // 데미지
     'a32+ 한카리아스 지진 vs h32 b32+ 더시마사리',
-    '+2 공32+ 생명의구슬 한카 지진 vs h32 b32+ 무장조',
+    '+2 공32+ 생명의구슬 한카 지진 vs h32 b32+ 크레베이스',
     'c32+ 메가리자몽Y 불대문자 vs h32 d32+ 마릴리',
+    '-1 a32+ 한카리아스 지진 vs h32 b32+ 더시마사리',
+    'a32+ 마릴리 아쿠아제트 vs -2b h32 한카리아스',
+    'a32+ 크레베이스 바디프레스 vs h32 d32+ 삼삼드래',
+    'c32+ 생명의구슬 삼삼드래 용성군 vs h32 d32+ 더시마사리',
+    'a32 화상 한카리아스 지진 vs h32 b32+ 더시마사리',
+    'c32 사이코필드 카디나르마 와이드포스 vs h32 마릴리',
+    // 결정력
     'c32+ 생명의구슬 삼삼드래 악의파동',
+    '+2 c32+ 메가리자몽Y 불대문자',
+    '한카 지진',
+    'c32 쾌청 메가리자몽Y 불대문자',
+    '+2b32 크레베이스 바디프레스',
+    'a32+ 목탄 리자몽 불대문자',
+    // 내구력
     'vs h32 d32+ 크레베이스',
-    'c32 사이코필드 카디나르마 사이코키네시스 vs h4 마스카나',
+    'vs h32 b32+ 리플렉터 무장조',
+    'vs +2b h32 크레베이스',
+    'vs h32 마릴리',
   ];
+
+  // Fisher–Yates 로 섞어 앞에서 n개.
+  function sample(pool, n) {
+    const a = pool.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a.slice(0, n);
+  }
+  const EXAMPLES = sample(EXAMPLE_POOL, 3);
 
   const esc = s => String(s).replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
   const MODE_LABEL = {damage: '데미지', firepower: '결정력', durability: '내구력'};
