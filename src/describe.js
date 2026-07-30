@@ -161,6 +161,14 @@
   }
 
   function describeFirepower(spec, out) {
+    // 변화기·미수록 기술은 결정력이 없다.
+    if (out.notApplicable) {
+      return {
+        head: `${sideLabel(spec.attacker)} ${koName('move', spec.attacker.move)}`,
+        main: out.statusMove ? '변화기라 결정력이 없습니다' : '챔피언스 미수록 기술입니다',
+        sub: out.statusMove ? '공격기(물리·특수)를 입력해 주세요.' : '',
+      };
+    }
     // 배율 분해를 "특공 194 × 위력 130 × 자속 1.5 × 쾌청 1.5 × 생명의구슬 1.3" 형태로.
     let sub;
     if (out.factors && out.factors.length) {

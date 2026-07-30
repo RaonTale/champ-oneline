@@ -182,6 +182,13 @@
     const dummy = makeDummy();
     const move = makeMove(spec.attacker);
     const field = buildField(spec.field);
+
+    // 변화기(칼춤·나쁜음모 등)와 데이터가 없는 기술(챔피언스 미수록)은 결정력이 없다.
+    if (move.category === 'Status' || move.bp == null) {
+      return {value: null, notApplicable: true, statusMove: move.category === 'Status',
+        noData: move.bp == null && move.category !== 'Status', attacker, move, field, factors: []};
+    }
+
     applyBoosts(attacker, dummy, move, spec.attacker, null); // 랭크업 반영
 
     // 위력업 도구는 별도 레이어로 분리 → 엔진 계산엔 도구 없는 클론을 쓴다.
@@ -189,7 +196,14 @@
     const itemMult = itemMultOf(attacker.item, move);
 
     const desc = {};
-    const bp = calc.calculateBasePowerChampions(g, noItem, dummy, move, field, false, desc, 0);
+    // 트리플악셀처럼 히트마다 위력이 오르는 기술(hit×20)은 hit 인덱스(1~)가 필요하다.
+    // 예전엔 hit=0을 넘겨 위력이 0이 됐다. 히트별로 각각 계산해 뒤에서 합산한다.
+    const hitCount = move.hits && move.hits > 1 ? move.hits : 1;
+    const perHitBp = [];
+    for (let h = 1; h <= hitCount; h++) {
+      perHitBp.push(calc.calculateBasePowerChampions(g, noItem, dummy, move, field, false, desc, h));
+    }
+    const bp = perHitBp[0];
     const attack = calc.calculateAttackChampions(g, noItem, dummy, move, field, desc, false);
     const stabMod = calc.getStabMod(noItem, move, desc);
     const finalMods = calc.calculateFinalModsChampions(g, noItem, dummy, move, field, desc, false, 1);
@@ -200,9 +214,12 @@
       !attacker.hasAbility('Guts') && !move.named('Facade');
     const burnMult = applyBurn ? 0.5 : 1;
 
-    const hits = move.hits && move.hits > 1 ? move.hits : 1;
-    const single = bp * attack * (stabMod / 4096) * (finalMod / 4096) * weatherMult * burnMult * itemMult;
-    const value = Math.max(0, Math.floor(single) * hits);
+    const hits = hitCount;
+    const perMult = attack * (stabMod / 4096) * (finalMod / 4096) * weatherMult * burnMult * itemMult;
+    // 히트별 위력이 달라도(트리플악셀) 정확히 합산. 상수 위력 연타면 단순히 위력×타수와 같다.
+    let value = 0;
+    for (const bph of perHitBp) value += Math.floor(bph * perMult);
+    value = Math.max(0, value);
 
     // ── 배율 분해(표시용) ──
     // 필드의 "일반 타입보정(×1.3/×0.5)"만 필드로 빼고, 와이드포스처럼 필드에서 위력 자체가
@@ -212,7 +229,7 @@
 
     const neutral = noItem.clone(); neutral.ability = 'Pressure'; neutral.abilityOn = false;
     const d2 = {};
-    const bpNeutral = calc.calculateBasePowerChampions(g, neutral, dummy, move, field, false, d2, 0); // 특성만 뺀 위력(필드·무브특효 포함)
+    const bpNeutral = calc.calculateBasePowerChampions(g, neutral, dummy, move, field, false, d2, 1); // 특성만 뺀 위력(필드·무브특효 포함)
     const atkNeutral = calc.calculateAttackChampions(g, neutral, dummy, move, field, d2, false);       // 특성 뺀 공격(랭크 포함)
     // 랭크업은 공격 수치에 녹이지 않고 별도 배율로 분리한다. (바디프레스는 방어 랭크가 대상)
     // 엔진은 boosts[stat] 가 숫자여야 하므로 키를 유지한 채 0으로 초기화한다.
@@ -226,12 +243,15 @@
     const cat = move.category === 'Special' ? '특공' : '공격';
     const abilityBpMult = bpNeutral ? bp / bpNeutral : 1;
     const abilityMult = (atkNeutral ? attack / atkNeutral : 1) * abilityBpMult;
-    const shownBp = Math.round(bp / (terrainTypeMult * abilityBpMult)); // 무브특효 포함, 필드·특성 제외
+    // 트리플악셀처럼 히트마다 위력이 다르면(가변) 합산 위력을 보여주고 "N타"를 따로 곱하지 않는다.
+    const varHits = perHitBp.some(b => b !== perHitBp[0]);
+    const sumBp = perHitBp.reduce((a, b) => a + b, 0);
+    const shownBp = Math.round((varHits ? sumBp : bp) / (terrainTypeMult * abilityBpMult)); // 무브특효 포함, 필드·특성 제외
 
     const weightBased = WEIGHT_MOVES.has(calc.toID(move.name));
     const factors = [];
     factors.push({num: `${cat} ${atkNoBoost}`});
-    factors.push({num: `위력 ${shownBp}${weightBased ? '(상대무게 100kg 기준)' : ''}`});
+    factors.push({num: `위력 ${shownBp}${varHits ? ` (${hits}타 합산)` : ''}${weightBased ? '(상대무게 100kg 기준)' : ''}`});
     if (Math.abs(rankMult - 1) > 0.005) factors.push({label: '랭크', mult: r2(rankMult)});
     if (stabMod !== 4096) factors.push({label: '자속', mult: r2(stabMod / 4096)});
     if (Math.abs(abilityMult - 1) > 0.005) factors.push({label: koAbility(attacker.ability), mult: r2(abilityMult)});
@@ -241,7 +261,7 @@
     if (Math.abs(itemMult - 1) > 0.005) {
       factors.push({label: koItem(attacker.item), mult: r2(itemMult)});
     }
-    if (hits > 1) factors.push({num: `${hits}타`});
+    if (hits > 1 && !varHits) factors.push({num: `${hits}타`});
 
     return {value, attacker, move, field, effBp: bp, effAtk: attack, factors};
   }
