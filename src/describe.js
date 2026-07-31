@@ -161,6 +161,14 @@
   }
 
   function describeFirepower(spec, out) {
+    // 고정 데미지 기술: 결정력 대신 깎는 HP를 그대로 보여준다.
+    if (out.fixedDamage) {
+      return {
+        head: `${sideLabel(spec.attacker)} ${koName('move', spec.attacker.move)}`,
+        main: `고정 데미지 ${fmt(out.value)}`,
+        sub: out.finalGambit ? `자신의 HP만큼 (현재 ${fmt(out.value)})` : '레벨 50 기준 고정값',
+      };
+    }
     // 변화기·미수록 기술은 결정력이 없다.
     if (out.notApplicable) {
       return {

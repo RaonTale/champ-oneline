@@ -89,6 +89,10 @@
     if (window.calc.toID(side.move) === 'lastrespects') {
       opts.overrides = Object.assign({}, opts.overrides, {basePower: 50 * (1 + (side.alliesFainted || 0))});
     }
+    // 메탈클로: gen0 데이터가 비어(유령) 있어 실제 값(강철·물리·위력50)으로 보강.
+    if (window.calc.toID(side.move) === 'metalclaw') {
+      opts.overrides = Object.assign({basePower: 50, type: 'Steel', category: 'Physical'}, opts.overrides);
+    }
     return new Move(gen(), side.move, opts);
   }
 
@@ -164,6 +168,15 @@
   const koAbility = en => (window.KO && window.KO.koName.ability && window.KO.koName.ability[en]) || en;
   const koItem = en => (window.KO && window.KO.koName.item && window.KO.koName.item[en]) || en;
 
+  // 고정 데미지 기술 — 위력·능력치와 무관하게 정해진 HP를 깎는다(엔진 handleFixedDamageMoves 동일).
+  function fixedDamageOf(attacker, move) {
+    if (move.named('Seismic Toss', 'Night Shade')) return attacker.level; // 레벨 = 50
+    if (move.named('Dragon Rage')) return 40;
+    if (move.named('Sonic Boom')) return 20;
+    if (move.named('Final Gambit')) return attacker.curHP(); // 자신의 현재 HP만큼
+    return 0;
+  }
+
   // 위력업 도구의 데미지 배수(별도 레이어). 생명의구슬은 1.3(게임 5324/4096 대신 관례값).
   function itemMultOf(itemEn, move) {
     if (!itemEn) return 1;
@@ -182,6 +195,14 @@
     const dummy = makeDummy();
     const move = makeMove(spec.attacker);
     const field = buildField(spec.field);
+
+    // 고정 데미지 기술: 위력이 아니라 정해진 값만큼 깎는다(레벨 50 고정).
+    //   지구던지기·나이트헤드 = 레벨(50), 용의분노 = 40, 음속날개 = 20, 목숨걸기 = 자신 HP.
+    const fixed = fixedDamageOf(attacker, move);
+    if (fixed > 0) {
+      return {value: fixed, fixedDamage: true, finalGambit: move.named('Final Gambit'),
+        attacker, move, field, factors: []};
+    }
 
     // 변화기(칼춤·나쁜음모 등)와 데이터가 없는 기술(챔피언스 미수록)은 결정력이 없다.
     if (move.category === 'Status' || move.bp == null) {
