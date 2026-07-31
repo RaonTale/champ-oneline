@@ -121,6 +121,14 @@
     const field = buildField(spec.field);
     applyBoosts(attacker, defender, move, spec.attacker, spec.defender);
     const result = window.calc.calculate(g, attacker, defender, move, field);
+    // 엔진이 계산 못 하는 방어측 HP 기반 기술(일격기·분노의앞니·죽기살기)은 직접 값 산출.
+    const custom = defenderHpDamage(move, attacker, defender);
+    if (custom) return {result, attacker, defender, move, field, customDamage: custom.dmg, ohko: custom.ohko};
+    // 받은 피해에 의존해 계산 불가한 반사기·비축기는 안내만(내던지기는 엔진이 도구로 계산하므로 제외).
+    if (move.named('Counter', 'Mirror Coat', 'Metal Burst', 'Comeuppance'))
+      return {result, attacker, defender, move, field, specialText: '받은 피해를 되돌려주는 기술이라 계산할 수 없습니다 (상대 공격에 의존)'};
+    if (move.named('Spit Up'))
+      return {result, attacker, defender, move, field, specialText: '비축 횟수에 따라 위력이 달라집니다'};
     return {result, attacker, defender, move, field};
   }
 
@@ -177,6 +185,28 @@
     return 0;
   }
 
+  // 방어측(또는 받은 피해)에 의존해 위력 개념이 없는 기술 — 결정력 모드에선 안내만 한다.
+  function specialMoveNote(move) {
+    if (move.named('Guillotine', 'Horn Drill', 'Fissure', 'Sheer Cold'))
+      return '일격필살기 — 명중하면 상대를 즉시 기절시킵니다 (vs 상대 입력 시 표시)';
+    if (move.named('Super Fang')) return '상대 현재 HP의 절반을 깎습니다 (vs 상대를 입력하면 계산됩니다)';
+    if (move.named('Endeavor')) return '상대 HP를 자신과 같게 만듭니다 (vs 상대를 입력하면 계산됩니다)';
+    if (move.named('Counter', 'Mirror Coat', 'Metal Burst', 'Comeuppance'))
+      return '받은 피해를 되돌려주는 기술이라 결정력이 없습니다';
+    if (move.named('Spit Up')) return '비축 횟수에 따라 위력이 달라집니다';
+    if (move.named('Fling')) return '내던지는 도구에 따라 위력이 정해집니다';
+    return null;
+  }
+
+  // 방어측 HP로 데미지가 정해지는 기술(엔진 미구현) — 데미지 모드에서 직접 계산.
+  function defenderHpDamage(move, attacker, defender) {
+    if (move.named('Guillotine', 'Horn Drill', 'Fissure', 'Sheer Cold'))
+      return {dmg: defender.maxHP(), ohko: true}; // 일격필살 = 풀피만큼
+    if (move.named('Super Fang')) return {dmg: Math.max(1, Math.floor(defender.curHP() / 2)), ohko: false};
+    if (move.named('Endeavor')) return {dmg: Math.max(0, defender.curHP() - attacker.curHP()), ohko: false};
+    return null;
+  }
+
   // 위력업 도구의 데미지 배수(별도 레이어). 생명의구슬은 1.3(게임 5324/4096 대신 관례값).
   function itemMultOf(itemEn, move) {
     if (!itemEn) return 1;
@@ -202,6 +232,12 @@
     if (fixed > 0) {
       return {value: fixed, fixedDamage: true, finalGambit: move.named('Final Gambit'),
         attacker, move, field, factors: []};
+    }
+
+    // 방어측/받은 피해에 의존하는 기술(일격기·분노의앞니·반사기 등)은 안내만.
+    const specialText = specialMoveNote(move);
+    if (specialText) {
+      return {value: null, notApplicable: true, specialText, attacker, move, field, factors: []};
     }
 
     // 변화기(칼춤·나쁜음모 등)와 데이터가 없는 기술(챔피언스 미수록)은 결정력이 없다.

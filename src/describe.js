@@ -140,6 +140,22 @@
       `${spec.attacker.crit ? ' 급소' : ''}` +
       ` → ${sideLabel(spec.defender)}`;
 
+    // 반사기·비축기 등 계산 불가 기술은 안내만 표시.
+    if (out.specialText) return {head, main: out.specialText, sub: fieldLabel(spec.field)};
+
+    // 방어측 HP 기반 기술(일격기·분노의앞니·죽기살기)은 엔진 대신 직접 산출한 값을 쓴다.
+    if (out.customDamage != null) {
+      const v = out.customDamage;
+      const p = v / maxHP * 100;
+      return {
+        head,
+        main: v > 0 ? `${fmt(v)} (${pct(p)}%)` : '데미지 없음',
+        verdict: out.ohko ? '일격필살' : (v >= maxHP ? '확정 1타' : ''),
+        sub: [fieldLabel(spec.field), `상대 체력 ${fmt(maxHP)}`].filter(Boolean).join(' · '),
+        bar: {min: p, max: p, lethal: p >= 100},
+      };
+    }
+
     if (max <= 0) {
       return {
         head,
@@ -169,10 +185,12 @@
         sub: out.finalGambit ? `자신의 HP만큼 (현재 ${fmt(out.value)})` : '레벨 50 기준 고정값',
       };
     }
-    // 변화기·미수록 기술은 결정력이 없다.
+    // 변화기·미수록·방어측 의존 기술은 결정력이 없다.
     if (out.notApplicable) {
+      const head = `${sideLabel(spec.attacker)} ${koName('move', spec.attacker.move)}`;
+      if (out.specialText) return {head, main: out.specialText, sub: ''};
       return {
-        head: `${sideLabel(spec.attacker)} ${koName('move', spec.attacker.move)}`,
+        head,
         main: out.statusMove ? '변화기라 결정력이 없습니다' : '챔피언스 미수록 기술입니다',
         sub: out.statusMove ? '공격기(물리·특수)를 입력해 주세요.' : '',
       };
