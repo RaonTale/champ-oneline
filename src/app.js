@@ -251,7 +251,14 @@
 
     const parts = [];
     parts.push(`<div class="mode mode-${spec.mode}">${MODE_LABEL[spec.mode]}</div>`);
-    parts.push(`<div class="matchup">${esc(desc.head)}</div>`);
+    if (desc.headParts) {
+      const html = desc.headParts
+        .map(p => p.c === 'arrow' ? '<span class="seg-arrow">→</span>' : `<span class="seg seg-${p.c}">${esc(p.t)}</span>`)
+        .join(' ');
+      parts.push(`<div class="matchup">${html}</div>`);
+    } else {
+      parts.push(`<div class="matchup">${esc(desc.head)}</div>`);
+    }
     parts.push(`<div class="main">${esc(desc.main)}</div>`);
     if (desc.verdict) parts.push(`<div class="verdict">${esc(desc.verdict)}</div>`);
     if (desc.bar) parts.push(dmgBarHTML(desc.bar));

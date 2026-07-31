@@ -29,21 +29,49 @@
     return parts.join(' ');
   }
 
-  /** 포켓몬 한 마리를 "+2 공32+ 생명의구슬 한카리아스" 형태로 쓴다. */
-  function sideLabel(side) {
-    const bits = [];
-    if (side.boost) bits.push((side.boost > 0 ? '+' : '') + side.boost);
-    const sp = spLabel(side);
-    if (sp) bits.push(sp);
-    if (side.nature && side.nature !== 'Serious' && !side.natureHint.plus && !side.natureHint.minus) {
-      bits.push(koName('nature', side.nature));
+  /**
+   * 포켓몬 한 마리를 색상 세그먼트 배열로 만든다.
+   * 랭크(단순/능력치별) · 능력포인트 · 타입변환 · 성격 · 도구 · 특성 · 상태 · 데스 · HP · 이름.
+   */
+  function sideSegs(side) {
+    const segs = [];
+    if (side.boost) segs.push({t: (side.boost > 0 ? '+' : '') + side.boost, c: 'rank'});
+    // 능력치별 랭크업 (+2방 / -2공 …) — 바디프레스·어시스트파워용
+    for (const stat of STAT_ORDER) {
+      const v = side.boosts && side.boosts[stat];
+      if (v == null) continue;
+      segs.push({t: (v > 0 ? '+' : '') + v + STAT_SHORT[stat], c: 'rank'});
     }
-    if (side.noItem) bits.push('노템');
-    else if (side.item) bits.push(koName('item', side.item));
-    if (side.ability) bits.push(koName('ability', side.ability));
-    if (side.status) bits.push(STATUS_KO[side.status] || side.status);
-    bits.push(koName('pokemon', side.species));
-    return bits.join(' ');
+    const sp = spLabel(side);
+    if (sp) segs.push({t: sp, c: 'sp'});
+    // 타입 변환 (~타입) — 변환자재/리베로
+    if (side.typeOverride) {
+      for (const ty of side.typeOverride) segs.push({t: koName('type', ty) + '타입', c: 'type'});
+    }
+    if (side.nature && side.nature !== 'Serious' && !side.natureHint.plus && !side.natureHint.minus) {
+      segs.push({t: koName('nature', side.nature), c: 'nature'});
+    }
+    if (side.noItem) segs.push({t: '노템', c: 'item'});
+    else if (side.item) segs.push({t: koName('item', side.item), c: 'item'});
+    if (side.ability) segs.push({t: koName('ability', side.ability), c: 'ability'});
+    if (side.status) segs.push({t: STATUS_KO[side.status] || side.status, c: 'status'});
+    if (side.alliesFainted) segs.push({t: side.alliesFainted + '데스', c: 'fainted'});
+    if (side.hpPercent != null) segs.push({t: side.hpPercent + '%', c: 'hp'});
+    segs.push({t: koName('pokemon', side.species), c: 'mon'});
+    return segs;
+  }
+
+  /** 세그먼트 배열 → "+2 공32+ 생명의구슬 한카리아스" 평문 (테스트·폴백용). */
+  function sideLabel(side) {
+    return sideSegs(side).map(s => s.t).join(' ');
+  }
+
+  /** 기술 세그먼트(연타·급소 포함). */
+  function moveSeg(spec) {
+    let t = koName('move', spec.attacker.move);
+    if (spec.attacker.moveOpts.hits) t += ` ${spec.attacker.moveOpts.hits}타`;
+    if (spec.attacker.crit) t += ' 급소';
+    return {t, c: 'move'};
   }
 
   function fieldLabel(field) {
@@ -135,20 +163,18 @@
       max = Math.max.apply(null, flat);
     }
 
-    const head = `${sideLabel(spec.attacker)} ${koName('move', spec.attacker.move)}` +
-      `${spec.attacker.moveOpts.hits ? ` ${spec.attacker.moveOpts.hits}타` : ''}` +
-      `${spec.attacker.crit ? ' 급소' : ''}` +
-      ` → ${sideLabel(spec.defender)}`;
+    const headParts = [...sideSegs(spec.attacker), moveSeg(spec), {t: '→', c: 'arrow'}, ...sideSegs(spec.defender)];
+    const head = headParts.map(s => s.t).join(' ');
 
     // 반사기·비축기 등 계산 불가 기술은 안내만 표시.
-    if (out.specialText) return {head, main: out.specialText, sub: fieldLabel(spec.field)};
+    if (out.specialText) return {head, headParts, main: out.specialText, sub: fieldLabel(spec.field)};
 
     // 방어측 HP 기반 기술(일격기·분노의앞니·죽기살기)은 엔진 대신 직접 산출한 값을 쓴다.
     if (out.customDamage != null) {
       const v = out.customDamage;
       const p = v / maxHP * 100;
       return {
-        head,
+        head, headParts,
         main: v > 0 ? `${fmt(v)} (${pct(p)}%)` : '데미지 없음',
         verdict: out.ohko ? '일격필살' : (v >= maxHP ? '확정 1타' : ''),
         sub: [fieldLabel(spec.field), `상대 체력 ${fmt(maxHP)}`].filter(Boolean).join(' · '),
@@ -158,7 +184,7 @@
 
     if (max <= 0) {
       return {
-        head,
+        head, headParts,
         main: '데미지 없음 (무효)',
         sub: fieldLabel(spec.field),
       };
@@ -168,7 +194,7 @@
     const minPct = min / maxHP * 100;
     const maxPct = max / maxHP * 100;
     return {
-      head,
+      head, headParts,
       main: `${fmt(min)}~${fmt(max)} (${pct(minPct)}~${pct(maxPct)}%)`,
       verdict: ko,
       sub: [fieldLabel(spec.field), `상대 체력 ${fmt(maxHP)}`].filter(Boolean).join(' · '),
@@ -178,19 +204,21 @@
 
   function describeFirepower(spec, out) {
     // 고정 데미지 기술: 결정력 대신 깎는 HP를 그대로 보여준다.
+    const headParts = [...sideSegs(spec.attacker), moveSeg(spec)];
+    const head = headParts.map(s => s.t).join(' ');
+
     if (out.fixedDamage) {
       return {
-        head: `${sideLabel(spec.attacker)} ${koName('move', spec.attacker.move)}`,
+        head, headParts,
         main: `고정 데미지 ${fmt(out.value)}`,
         sub: out.finalGambit ? `자신의 HP만큼 (현재 ${fmt(out.value)})` : '레벨 50 기준 고정값',
       };
     }
     // 변화기·미수록·방어측 의존 기술은 결정력이 없다.
     if (out.notApplicable) {
-      const head = `${sideLabel(spec.attacker)} ${koName('move', spec.attacker.move)}`;
-      if (out.specialText) return {head, main: out.specialText, sub: ''};
+      if (out.specialText) return {head, headParts, main: out.specialText, sub: ''};
       return {
-        head,
+        head, headParts,
         main: out.statusMove ? '변화기라 결정력이 없습니다' : '챔피언스 미수록 기술입니다',
         sub: out.statusMove ? '공격기(물리·특수)를 입력해 주세요.' : '',
       };
@@ -205,7 +233,7 @@
       sub = `${stat} ${out.effAtk} × 위력 ${out.effBp}`;
     }
     return {
-      head: `${sideLabel(spec.attacker)} ${koName('move', spec.attacker.move)}`,
+      head, headParts,
       main: `결정력 ${fmt(out.value)}`,
       sub,
     };
@@ -216,6 +244,7 @@
     const modLabel = arr => (arr.length ? ` (${arr.join(', ')})` : '');
     return {
       head: sideLabel(spec.defender),
+      headParts: sideSegs(spec.defender),
       main: `물리내구 ${fmt(out.physical)}　/　특수내구 ${fmt(out.special)}`,
       sub: [
         `체력 ${fmt(out.hp)}`,
