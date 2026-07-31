@@ -251,21 +251,7 @@ body {
   color: var(--muted);
   margin-bottom: 10px;
   word-break: keep-all;
-  line-height: 1.6;
 }
-.matchup .seg { white-space: nowrap; }
-.seg-mon     { color: var(--ink); font-weight: 700; }   /* 포켓몬 */
-.seg-move    { color: var(--accent); font-weight: 600; }/* 기술 */
-.seg-sp      { color: #3f7fe6; }                        /* 능력포인트 */
-.seg-rank    { color: #e0803a; font-weight: 600; }      /* 랭크업 */
-.seg-type    { color: #12a89a; }                        /* 타입 변환 */
-.seg-ability { color: var(--ok); }                      /* 특성 */
-.seg-item    { color: #9b6dff; }                        /* 도구 */
-.seg-status  { color: #d24fb0; }                        /* 상태이상 */
-.seg-fainted { color: #c2555a; }                        /* 쓰러진 아군 */
-.seg-nature  { color: var(--muted); }                   /* 성격 */
-.seg-hp      { color: var(--muted); }                   /* 잔여 HP */
-.seg-arrow   { color: var(--muted); }
 
 
 .main {
