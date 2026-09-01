@@ -8,6 +8,12 @@
   const GEN_NUM = 0; // @smogon/calc 에서 챔피언스는 0세대로 들어가 있다
   const gen = () => window.calc.Generations.get(GEN_NUM);
 
+  // 손편집 보정 데이터(src/data/champions_data.js). 수치·목록은 전부 여기서 읽는다.
+  const CHAMP = window.CHAMP || {};
+  const moveID = move => window.calc.toID(move.name);
+  const specialKind = move => (CHAMP.specialMoves && CHAMP.specialMoves[moveID(move)]) || null;
+  const specialNote = kind => (CHAMP.specialNotes && CHAMP.specialNotes[kind]) || '';
+
   // 메가폼 → 대응 메가스톤 (메가폼을 고르면 도구를 자동으로 끼워 준다)
   const megaStoneFor = (() => {
     let map = null;
@@ -85,14 +91,11 @@
     const {Move} = window.calc;
     const opts = Object.assign({}, side.moveOpts);
     if (side.crit) opts.isCrit = true;
-    // 성묘(Last Respects): 챔피언스 엔진 미구현 → 위력 50×(1+쓰러진 아군 수) 직접 지정.
-    if (window.calc.toID(side.move) === 'lastrespects') {
-      opts.overrides = Object.assign({}, opts.overrides, {basePower: 50 * (1 + (side.alliesFainted || 0))});
-    }
-    // 메탈클로: gen0 데이터가 비어(유령) 있어 실제 값(강철·물리·위력50)으로 보강.
-    if (window.calc.toID(side.move) === 'metalclaw') {
-      opts.overrides = Object.assign({basePower: 50, type: 'Steel', category: 'Physical'}, opts.overrides);
-    }
+    // 기술 보강: 동적 위력(성묘 등) 우선, 없으면 정적 보강(유령 기술 위력/타입/분류).
+    const id = window.calc.toID(side.move);
+    const dyn = CHAMP.dynamicPower && CHAMP.dynamicPower[id];
+    const ov = dyn ? {basePower: dyn(side)} : (CHAMP.moveOverrides && CHAMP.moveOverrides[id]);
+    if (ov) opts.overrides = Object.assign({}, ov, opts.overrides);
     return new Move(gen(), side.move, opts);
   }
 
@@ -125,10 +128,9 @@
     const custom = defenderHpDamage(move, attacker, defender);
     if (custom) return {result, attacker, defender, move, field, customDamage: custom.dmg, ohko: custom.ohko};
     // 받은 피해에 의존해 계산 불가한 반사기·비축기는 안내만(내던지기는 엔진이 도구로 계산하므로 제외).
-    if (move.named('Counter', 'Mirror Coat', 'Metal Burst', 'Comeuppance'))
-      return {result, attacker, defender, move, field, specialText: '받은 피해를 되돌려주는 기술이라 계산할 수 없습니다 (상대 공격에 의존)'};
-    if (move.named('Spit Up'))
-      return {result, attacker, defender, move, field, specialText: '비축 횟수에 따라 위력이 달라집니다'};
+    const kind = specialKind(move);
+    if (kind === 'reflect' || kind === 'stockpile')
+      return {result, attacker, defender, move, field, specialText: specialNote(kind)};
     return {result, attacker, defender, move, field};
   }
 
@@ -172,49 +174,40 @@
     return 1;
   }
   // 상대(또는 자신) 무게에 따라 위력이 변하는 기술 — 결정력 모드엔 상대가 없어 더미(100kg) 기준으로 표시.
-  const WEIGHT_MOVES = new Set(['grassknot', 'lowkick', 'heavyslam', 'heatcrash']);
+  const WEIGHT_MOVES = new Set(CHAMP.weightMoves || []);
   const koAbility = en => (window.KO && window.KO.koName.ability && window.KO.koName.ability[en]) || en;
   const koItem = en => (window.KO && window.KO.koName.item && window.KO.koName.item[en]) || en;
 
-  // 고정 데미지 기술 — 위력·능력치와 무관하게 정해진 HP를 깎는다(엔진 handleFixedDamageMoves 동일).
+  // 고정 데미지 기술 — 위력·능력치와 무관하게 정해진 HP를 깎는다. (표: CHAMP.fixedDamage)
   function fixedDamageOf(attacker, move) {
-    if (move.named('Seismic Toss', 'Night Shade')) return attacker.level; // 레벨 = 50
-    if (move.named('Dragon Rage')) return 40;
-    if (move.named('Sonic Boom')) return 20;
-    if (move.named('Final Gambit')) return attacker.curHP(); // 자신의 현재 HP만큼
-    return 0;
+    const v = CHAMP.fixedDamage && CHAMP.fixedDamage[moveID(move)];
+    if (v == null) return 0;
+    if (v === 'level') return attacker.level;   // = 50
+    if (v === 'ownHP') return attacker.curHP();  // 목숨걸기: 자신의 현재 HP
+    return v;                                    // 숫자(용의분노 40 등)
   }
 
-  // 방어측(또는 받은 피해)에 의존해 위력 개념이 없는 기술 — 결정력 모드에선 안내만 한다.
-  function specialMoveNote(move) {
-    if (move.named('Guillotine', 'Horn Drill', 'Fissure', 'Sheer Cold'))
-      return '일격필살기 — 명중하면 상대를 즉시 기절시킵니다 (vs 상대 입력 시 표시)';
-    if (move.named('Super Fang')) return '상대 현재 HP의 절반을 깎습니다 (vs 상대를 입력하면 계산됩니다)';
-    if (move.named('Endeavor')) return '상대 HP를 자신과 같게 만듭니다 (vs 상대를 입력하면 계산됩니다)';
-    if (move.named('Counter', 'Mirror Coat', 'Metal Burst', 'Comeuppance'))
-      return '받은 피해를 되돌려주는 기술이라 결정력이 없습니다';
-    if (move.named('Spit Up')) return '비축 횟수에 따라 위력이 달라집니다';
-    if (move.named('Fling')) return '내던지는 도구에 따라 위력이 정해집니다';
-    return null;
-  }
-
-  // 방어측 HP로 데미지가 정해지는 기술(엔진 미구현) — 데미지 모드에서 직접 계산.
+  // 방어측 HP로 데미지가 정해지는 기술(엔진 미구현) — 데미지 모드에서 직접 계산. (표: CHAMP.specialMoves)
   function defenderHpDamage(move, attacker, defender) {
-    if (move.named('Guillotine', 'Horn Drill', 'Fissure', 'Sheer Cold'))
-      return {dmg: defender.maxHP(), ohko: true}; // 일격필살 = 풀피만큼
-    if (move.named('Super Fang')) return {dmg: Math.max(1, Math.floor(defender.curHP() / 2)), ohko: false};
-    if (move.named('Endeavor')) return {dmg: Math.max(0, defender.curHP() - attacker.curHP()), ohko: false};
-    return null;
+    switch (specialKind(move)) {
+      case 'ohko': return {dmg: defender.maxHP(), ohko: true};                                   // 일격필살 = 풀피
+      case 'halfHP': return {dmg: Math.max(1, Math.floor(defender.curHP() / 2)), ohko: false};    // 분노의앞니
+      case 'endeavor': return {dmg: Math.max(0, defender.curHP() - attacker.curHP()), ohko: false}; // 죽기살기
+      default: return null;
+    }
   }
 
-  // 위력업 도구의 데미지 배수(별도 레이어). 생명의구슬은 1.3(게임 5324/4096 대신 관례값).
+  // 위력업 도구의 데미지 배수(별도 레이어). 표: CHAMP.itemMults + 타입강화 도구는 typeBoostMult.
   function itemMultOf(itemEn, move) {
     if (!itemEn) return 1;
-    if (itemEn === 'Life Orb') return 1.3;
-    if (itemEn === 'Muscle Band') return move.category === 'Physical' ? 1.1 : 1;
-    if (itemEn === 'Wise Glasses') return move.category === 'Special' ? 1.1 : 1;
-    const bt = window.calc.getItemBoostType ? window.calc.getItemBoostType(itemEn) : null; // 타입강화 도구(목탄 등) 1.2
-    if (bt && move.hasType && move.hasType(bt)) return 1.2;
+    const spec = CHAMP.itemMults && CHAMP.itemMults[itemEn];
+    if (spec) {
+      if (spec.all) return spec.all;
+      if (spec.physical && move.category === 'Physical') return spec.physical;
+      if (spec.special && move.category === 'Special') return spec.special;
+    }
+    const bt = window.calc.getItemBoostType ? window.calc.getItemBoostType(itemEn) : null; // 목탄 등 타입강화 도구
+    if (bt && move.hasType && move.hasType(bt)) return CHAMP.typeBoostMult || 1.2;
     return 1;
   }
 
@@ -235,9 +228,9 @@
     }
 
     // 방어측/받은 피해에 의존하는 기술(일격기·분노의앞니·반사기 등)은 안내만.
-    const specialText = specialMoveNote(move);
-    if (specialText) {
-      return {value: null, notApplicable: true, specialText, attacker, move, field, factors: []};
+    const kind = specialKind(move);
+    if (kind) {
+      return {value: null, notApplicable: true, specialText: specialNote(kind), attacker, move, field, factors: []};
     }
 
     // 변화기(칼춤·나쁜음모 등)와 데이터가 없는 기술(챔피언스 미수록)은 결정력이 없다.
@@ -326,7 +319,7 @@
   // ── 내구력 ────────────────────────────────────────────────────────────────
   // 실효 체력 × 실효 방어. 랭크업, 리플렉터/빛의장막/오로라베일, 모래·눈 보정을 반영한다.
   // 0.411 = 데미지 공식 상수를 내구 쪽에 몰아넣은 관례값. 데미지% ≒ 결정력 ÷ 내구 가 성립한다.
-  const DURABILITY_K = 0.411;
+  const DURABILITY_K = CHAMP.durabilityK || 0.411;
   function durability(spec) {
     const side = spec.defender;
     const p = makePokemon(side);

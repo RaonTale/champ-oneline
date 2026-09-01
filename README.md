@@ -37,17 +37,23 @@ champcalc/
 │   ├── engine.js       스펙 → @smogon/calc 객체, 데미지/결정력/내구력 계산
 │   ├── describe.js     결과 → 한글 문장
 │   ├── app.js          입력창 ↔ 결과 실시간 연결
-│   └── data/ko.js      자동 생성 한글 사전 (직접 수정 금지)
+│   └── data/
+│       ├── README.md            데이터 편집 가이드 (무엇을 어디서 고치나)
+│       ├── ko.js               자동 생성 한글 사전 (직접 수정 금지)
+│       └── champions_data.js   손편집 보정 데이터 (기술 위력·고정데미지·도구 배수 등)
 ├── vendor/calc/        @smogon/calc 컴파일 산출물 (calc.pokemonshowdown.com 기준)
-└── tools/              데이터 빌드/검증 스크립트 (Node)
+└── tools/              데이터 빌드/검증 스크립트 (Node · 로컬 전용, 배포 제외)
     ├── build_ko.js         src/data/ko.js 생성
-    ├── overrides.json      수동 보정(별칭/폼 이름/신규 특성)
+    ├── overrides.json      한글 이름·별칭 수동 보정
     ├── loadcalc.js         Node에서 vendor/calc 로드
-    ├── dump_calc_data.js   gen0 종족/기술/… 목록 덤프
-    ├── test_pipeline.js    parse→engine→describe 전체 검증
-    └── probe_coverage.js   한글 데이터 커버리지 점검
-
+    ├── audit_coverage.js   엔진 이름의 한글 입력 가능 여부 점검
+    └── test_pipeline.js    parse→engine→describe 전체 검증
 ```
+
+## 데이터 편집
+포켓몬/기술/도구 데이터를 고치는 방법은 [`src/data/README.md`](src/data/README.md) 참고.
+요약: **한글 이름**은 `tools/overrides.json`(→ `build_ko.js` 재생성), **기술·도구 수치**는
+`src/data/champions_data.js`(즉시 반영). `ko.js` 는 자동 생성물이라 직접 고치지 않는다.
 
 ## 라이선스 / 출처
 - 계산 엔진: [@smogon/calc](https://github.com/smogon/damage-calc) (MIT) — `vendor/calc/LICENSE`

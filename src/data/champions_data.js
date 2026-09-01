@@ -1,0 +1,88 @@
+// 챔피언스 보정 데이터 — 사람이 직접 편집한다 (자동 생성되는 ko.js 와 다름).
+//
+// gen0(=Champions) 엔진에 데이터가 없거나 값이 다른 기술·도구를 여기서 보강한다.
+// 계산 로직(engine.js)은 이 표를 "읽기만" 하므로, 수치를 고칠 때 여기만 손대면 된다.
+//
+//   기술 key 는 영문명의 toID (소문자 + 기호 제거). 예: "Metal Claw" → "metalclaw".
+//   ko.js(한글 사전)는 tools/build_ko.js 로 자동 생성되므로 직접 고치지 말 것.
+//   자세한 편집 안내는 src/data/README.md 참고.
+(() => {
+  'use strict';
+
+  window.CHAMP = {
+    // ── 1) 기술 위력/타입/분류 보강 ─────────────────────────────────────────
+    // gen0 엔진에 데이터가 비어 있거나(유령 기술) 값이 다른 기술을 실제 값으로 채운다.
+    // 값 = {basePower, type, category}. 넣으면 결정력·데미지 모두 반영된다.
+    moveOverrides: {
+      metalclaw: {basePower: 50, type: 'Steel', category: 'Physical'},
+
+      // ↓ 사전엔 있으나 gen0 엔진 데이터가 없는 "유령 기술"들 (tools/build_ko.js 실행 시 경고로 나옴).
+      //   값 확인 후 주석을 해제하면 바로 계산된다. 선공 2배·가변 타입·연타 등 특수 처리는
+      //   아직 미반영이라, 우선 표준 기본 위력만 적어 둔다.
+      // anchorshot:      {basePower: 80,  type: 'Steel',    category: 'Physical'},
+      // astralbarrage:   {basePower: 120, type: 'Ghost',    category: 'Special'},
+      // bloodmoon:       {basePower: 140, type: 'Normal',   category: 'Special'},
+      // boltbeak:        {basePower: 85,  type: 'Electric', category: 'Physical'}, // 선공 시 위력 2배
+      // dragonhammer:    {basePower: 90,  type: 'Dragon',   category: 'Physical'},
+      // fishiousrend:    {basePower: 85,  type: 'Water',    category: 'Physical'}, // 선공 시 위력 2배
+      // geargrind:       {basePower: 50,  type: 'Steel',    category: 'Physical'}, // 2연타
+      // hyperdrill:      {basePower: 100, type: 'Normal',   category: 'Physical'},
+      // revelationdance: {basePower: 90,  type: 'Normal',   category: 'Special'},  // 타입 = 사용자의 1번째 타입
+      // snipeshot:       {basePower: 80,  type: 'Water',    category: 'Special'},
+      // tripledive:      {basePower: 30,  type: 'Water',    category: 'Physical'}, // 3연타
+    },
+
+    // ── 2) 아군 수 등으로 위력이 변하는 기술 (동적 위력) ────────────────────
+    // 값 = (side) => 위력. side 는 파싱 결과(alliesFainted 등)를 담고 있다.
+    dynamicPower: {
+      lastrespects: side => 50 * (1 + (side.alliesFainted || 0)), // 성묘: 쓰러진 아군 수만큼 위력 +50
+    },
+
+    // ── 3) 고정 데미지 기술 ─────────────────────────────────────────────────
+    // 위력과 무관하게 정해진 HP를 깎는다. 값 = 숫자 | 'level'(레벨=50) | 'ownHP'(자신 현재 HP).
+    fixedDamage: {
+      seismictoss: 'level', nightshade: 'level',
+      dragonrage: 40, sonicboom: 20,
+      finalgambit: 'ownHP',
+    },
+
+    // ── 4) 방어측/받은 피해에 의존하는 기술 ─────────────────────────────────
+    // kind 로 동작이 정해진다:
+    //   ohko     명중 시 즉시 기절(데미지=풀피)   halfHP  상대 현재 HP의 절반
+    //   endeavor 상대 HP를 자신과 같게            reflect 받은 피해 반사(계산 불가)
+    //   stockpile 비축 횟수 의존(계산 불가)        item    내던진 도구 위력(엔진이 계산)
+    specialMoves: {
+      guillotine: 'ohko', horndrill: 'ohko', fissure: 'ohko', sheercold: 'ohko',
+      superfang: 'halfHP', endeavor: 'endeavor',
+      counter: 'reflect', mirrorcoat: 'reflect', metalburst: 'reflect', comeuppance: 'reflect',
+      spitup: 'stockpile', fling: 'item',
+    },
+    // kind 별 안내 문구 (결정력·데미지 모드에 그대로 표시된다).
+    specialNotes: {
+      ohko: '일격필살기 — 명중하면 상대를 즉시 기절시킵니다 (vs 상대 입력 시 표시)',
+      halfHP: '상대 현재 HP의 절반을 깎습니다 (vs 상대를 입력하면 계산됩니다)',
+      endeavor: '상대 HP를 자신과 같게 만듭니다 (vs 상대를 입력하면 계산됩니다)',
+      reflect: '받은 피해를 되돌려주는 기술이라 계산할 수 없습니다 (상대 공격에 의존)',
+      stockpile: '비축 횟수에 따라 위력이 달라집니다',
+      item: '내던지는 도구에 따라 위력이 정해집니다',
+    },
+
+    // ── 5) 무게로 위력이 변하는 기술 ────────────────────────────────────────
+    // 결정력 모드엔 상대가 없어 100kg 기준으로 표시한다.
+    weightMoves: ['grassknot', 'lowkick', 'heavyslam', 'heatcrash'],
+
+    // ── 6) 위력업 도구 배수 (별도 레이어) ───────────────────────────────────
+    // {all} 전체 적용 · {physical}/{special} 분류별 적용.
+    // 목탄·자석 등 "타입 강화 도구"는 아래 typeBoostMult 로 자동 처리(엔진 getItemBoostType).
+    itemMults: {
+      'Life Orb': {all: 1.3},          // 생명의구슬 (관례값; 실제 게임은 5324/4096)
+      'Muscle Band': {physical: 1.1},  // 힘의머리띠
+      'Wise Glasses': {special: 1.1},  // 박식안경
+    },
+    typeBoostMult: 1.2, // 목탄 등 타입강화 도구가 같은 타입 기술에 주는 배수
+
+    // ── 7) 내구 공식 상수 ───────────────────────────────────────────────────
+    // 내구지수(HP×방어) ÷ 이 값 = 결정력과 같은 스케일. 데미지% ≒ 결정력 ÷ 내구.
+    durabilityK: 0.411,
+  };
+})();
