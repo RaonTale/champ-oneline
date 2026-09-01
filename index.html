@@ -52,26 +52,20 @@
     <details class="help">
       <summary>입력법 도움말</summary>
       <div class="helpBody">
-        <p>포켓몬 이름만 필수. 나머지(능력 포인트·성격·도구·특성·날씨·필드·랭크업)는 <b>띄어쓰기</b>로 구분해 한 줄에 적습니다.</p>
-        <ul>
-          <li><b>모드 자동 판별</b>
-            <ul>
-              <li><b>데미지</b> — <code>공격정보 기술 vs 방어정보</code> &nbsp;(<code>vs</code> · <code>-&gt;</code> · <code>=&gt;</code> 가능)</li>
-              <li><b>결정력</b> — <code>공격정보 기술</code> &nbsp;(vs 없이 기술만)</li>
-              <li><b>내구력</b> — <code>vs 방어정보</code> &nbsp;(맨 앞에 vs)</li>
-            </ul>
-          </li>
-          <li><b>능력 포인트</b> — 챔피언스는 노력치 대신 0~32. <code>a32</code>(공격 32), <code>c32</code>(특공), <code>h32 b32</code> 처럼. 한글로 <code>공32 방32</code> 도 가능. 성격 보정은 뒤에 <code>+</code>/<code>-</code> → <code>a32+</code>. 여러 능력치를 묶어 <code>hd32+</code>(= <code>h32 d32+</code>), <code>hb32</code> 처럼도 됩니다 (성격 보정은 체력이 아닌 능력치에 적용). 한/영 전환 없이 한글 자판 그대로 <code>ㅁ32+</code>(=a), <code>ㅗ</code>(h) <code>ㅠ</code>(b) <code>ㅊ</code>(c) <code>ㅇ</code>(d) <code>ㄴ</code>(s) 도 인식합니다</li>
-          <li><b>랭크업</b> — <code>+2</code>·<code>-1</code>(숫자 1~6, 공격/특공에 적용). 능력치별로는 <code>+2b</code>(방어 랭크+2)·<code>-2a</code>처럼, 포인트까지 붙여 <code>+2b32</code>, 묶어서 <code>+2ha32+</code>(체력은 랭크가 없어 건너뜀)도 됩니다. 방어 랭크는 <b>바디프레스</b>, 랭크 총합은 <b>어시스트파워</b> 위력에 반영. 결정력 분해에서는 랭크가 <b>별도 배율</b>로 표시됩니다</li>
-          <li><b>타입 변환</b> — <b>변환자재·리베로</b>처럼 타입이 바뀌는 경우 <code>~타입</code>으로 지정. 예 <code>물타입 마스카나</code>, <code>불타입 개굴닌자</code> (자속이 그 타입 기준으로 계산됨, 최대 2개)</li>
-          <li><b>메가진화</b> — <code>리자몽Y</code> / <code>메가입치트</code> 처럼 폼 이름을 직접, 또는 도구로 <code>가디안 가디안나이트</code></li>
-          <li><b>날씨/필드</b> — 입력창 위 <b>날씨·벽 토글</b>로 켜거나(같은 날씨 다시 누르면 꺼짐), 글로 <code>맑음</code> <code>비</code> <code>모래</code> <code>눈</code> · <code>일렉트릭필드</code> <code>사이코필드</code> 등. 글에 날씨/벽을 적으면 해당 토글이 자동으로 켜져(🔒) 고정됩니다. 가뭄 같은 특성명을 쓰면 날씨도 함께 적용</li>
-          <li><b>도구·상태이상</b> — <code>생명의구슬</code> <code>힘의머리띠</code> <code>박식안경</code> <code>목탄</code>(타입 강화)… · 상태이상 <code>화상</code> <code>맹독</code> <code>독</code> <code>마비</code> <code>잠듦</code> <code>얼음</code> (화상은 물리 데미지 절반). 도구 없이 계산하려면 <code>노템</code></li>
-          <li><b>특성</b> — 안 적으면 <b>사용률 1위 특성이 자동 적용</b>됩니다 (예: 마릴리 → 천하장사). 다른 특성을 쓰려면 이름을 함께 적으세요 (예: <code>두꺼운지방 마릴리</code>, <code>초식 마릴리</code>)</li>
-          <li><b>쓰러진 아군</b> — <b>성묘</b>(위력↑)·<b>총대장</b>(배율↑)은 쓰러진 아군 수에 좌우됩니다. <code>1데스</code>~<code>5데스</code>(또는 <code>1기절</code>)로 지정. 예 <code>3데스 성묘</code></li>
-          <li><b>특수 위력 기술</b> — <b>무게 기술</b>(<code>풀묶기</code> <code>안다리걸기</code> <code>헤비봄버</code>)은 상대 무게로 위력이 바뀝니다(결정력 모드는 100kg 기준 표시). <b>고정 데미지</b>(<code>지구던지기</code> <code>나이트헤드</code>=레벨50)와 <b>목숨걸기</b>(자신 HP만큼)는 위력 대신 깎는 HP로 표시됩니다</li>
-          <li><b>기타</b> — <code>3타</code>(연타, 기술별 최대까지 · 찍찍베기는 <code>10타</code>), <code>급소</code>, <code>분산</code>(더블 광역기), <code>리플렉터</code>/<code>빛의장막</code>, <code>50%</code>(잔여 체력), <code>노템</code>(도구 없음), <code>풀보정</code>(주요 능력치 32 자동)</li>
-        </ul>
+        <p>포켓몬 이름과 기술만 있으면 됩니다. 나머지는 <b>띄어쓰기</b>로 덧붙이세요.</p>
+        <table class="helpTable">
+          <tr><th>모드</th><td>기술만 = <b>결정력</b> · <code>… vs 방어</code> = <b>데미지</b> · 맨 앞 <code>vs</code> = <b>내구력</b></td></tr>
+          <tr><th>능력 포인트</th><td><code>a32</code> <code>공32</code>, 성격 <code>a32+</code>/<code>a32-</code>, 묶음 <code>hd32+</code></td></tr>
+          <tr><th>랭크업</th><td><code>+2</code> <code>-1</code>, 능력치별 <code>+2b32</code></td></tr>
+          <tr><th>특성</th><td>미입력 시 <b>사용률 1위 자동</b>, 바꾸려면 <code>두꺼운지방 마릴리</code></td></tr>
+          <tr><th>메가진화</th><td><code>리자몽Y</code> 또는 도구로 <code>가디안 가디안나이트</code></td></tr>
+          <tr><th>도구</th><td><code>생명의구슬</code> <code>힘의머리띠</code> <code>목탄</code> … (도구 없이 = <code>노템</code>)</td></tr>
+          <tr><th>상태이상</th><td><code>화상</code> <code>맹독</code> <code>마비</code> <code>잠듦</code> <code>얼음</code></td></tr>
+          <tr><th>타입 변환</th><td><code>물타입 마스카나</code> (변환자재·리베로)</td></tr>
+          <tr><th>날씨·필드·벽</th><td>위쪽 토글, 또는 글로 <code>맑음</code> <code>사이코필드</code> <code>리플렉터</code></td></tr>
+          <tr><th>기타</th><td><code>3타</code> <code>급소</code> <code>분산</code> <code>50%</code> <code>3데스</code>(성묘·총대장) <code>풀보정</code></td></tr>
+        </table>
+        <p class="helpMore">고급 : 한글 자판 그대로 <code>ㅁ32</code>(a)·<code>ㅗ</code>(h)…, 묶음 랭크 <code>+2ha32+</code> 도 인식합니다.</p>
       </div>
     </details>
 
