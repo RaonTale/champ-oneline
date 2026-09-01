@@ -38,6 +38,29 @@
     }
   })();
 
+  // 사용자 줄임말('줄임말' → '정식 한글명')을 사전에 합친다. 정식명이 매칭되는 사전(포켓몬/기술/
+  // 도구/특성)에 줄임말 키를 추가해, 입력 인식과 자동완성이 기존 별칭과 똑같이 동작한다.
+  (() => {
+    const ua = window.CHAMP && window.CHAMP.userAliases;
+    if (!ua) return;
+    const DICTS = ['pokemon', 'move', 'item', 'ability'];
+    for (const alias of Object.keys(ua)) {
+      const aliasKey = normKo(alias);
+      const targetKey = normKo(ua[alias]);
+      let matched = false;
+      for (const d of DICTS) {
+        if (KO[d] && KO[d][targetKey]) {
+          if (!KO[d][aliasKey]) KO[d][aliasKey] = KO[d][targetKey];
+          matched = true;
+          break;
+        }
+      }
+      if (!matched && typeof console !== 'undefined') {
+        console.warn('[champcalc] 줄임말 대상을 못 찾음: "' + alias + '" → "' + ua[alias] + '"');
+      }
+    }
+  })();
+
   // 한글 키보드에서 영문 스탯키가 만드는 자모도 같이 받는다: h→ㅗ a→ㅁ b→ㅠ c→ㅊ d→ㅇ s→ㄴ
   const STAT_KO = {
     특공: 'spa', 특방: 'spd', 체력: 'hp', 스피드: 'spe',
