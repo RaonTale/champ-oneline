@@ -310,13 +310,49 @@
     return {start: pos - left.length, end: pos + right.length, query: left};
   }
 
+  // 커서가 놓인 side(vs 기준)에서 이미 채워진 슬롯을 구한다.
+  // 같은 종류(포켓몬·기술·도구·특성)는 다시 추천하지 않고, 방어측(vs 뒤)은 기술을 안 쓴다.
+  function filledCatsHere() {
+    const val = $input.value;
+    const pos = $input.selectionStart;
+    // vs 경계(첫 번째): 'vs' 단어 또는 화살표(->, =>, ＞, >)
+    let bStart = -1, bEnd = -1;
+    const vm = /(^|\s)vs(\s|$)/i.exec(val);
+    if (vm) { bStart = vm.index + vm[1].length; bEnd = bStart + 2; }
+    const am = /->|=>|＞|>/.exec(val);
+    if (am && (bStart < 0 || am.index < bStart)) { bStart = am.index; bEnd = am.index + am[0].length; }
+
+    const isDefender = bStart >= 0 && pos > bStart;
+    // 지금 편집 중인 토큰은 빼고(공백으로 치환) 그 side 텍스트만 해석한다.
+    const {start, end} = currentToken();
+    const cleaned = val.slice(0, start) + ' '.repeat(end - start) + val.slice(end);
+    const sideText = bStart < 0 ? cleaned
+      : isDefender ? cleaned.slice(bEnd) : cleaned.slice(0, bStart);
+
+    const filled = new Set();
+    try {
+      const spec = window.CC.parse(sideText);
+      const side = spec.attacker || spec.defender;
+      if (side) {
+        if (side.species) filled.add('pokemon');
+        if (side.move) filled.add('move');
+        if (side.item || side.noItem) filled.add('item');
+        if (side.ability) filled.add('ability');
+      }
+    } catch (e) { /* 무시 */ }
+    if (isDefender) filled.add('move'); // 방어측은 기술이 없음
+    return filled;
+  }
+
   function computeSuggestions(query) {
     const q = normKo(query);
     // 한글이 들어간 단어에만 (a32·hd 같은 능력치 토큰엔 안 뜨게)
     if (!q || !/[가-힣ㄱ-ㅎ]/.test(query)) return [];
+    const filled = filledCatsHere();
     const prefix = [];   // 별칭·이름이 q 로 시작 (생구·하펌 등 줄임말 포함)
     const contains = []; // 중간에 q 를 포함 (일부만 친 경우 대비)
     for (const e of SUGGEST_INDEX) {
+      if (filled.has(e.cat)) continue; // 이 side에 이미 있는 종류는 추천 제외
       let pre = false, con = false;
       for (const k of e.keys) {
         if (k.startsWith(q)) { pre = true; break; }
