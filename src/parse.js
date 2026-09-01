@@ -19,6 +19,25 @@
     return lead + mid + tail;
   };
 
+  // 신규 포켓몬(챔피언스 엔진 미수록)을 이름 사전에 합친다. 종족값은 engine.js가 CHAMP에서 읽는다.
+  // 이렇게 KO 에 넣어 두면 파싱·표시·자동완성이 기존 포켓몬과 똑같이 동작한다.
+  (() => {
+    const so = window.CHAMP && window.CHAMP.speciesOverrides;
+    if (!so) return;
+    for (const en of Object.keys(so)) {
+      const def = so[en];
+      for (const nm of [def.ko].concat(def.aliases || [])) {
+        if (nm && !KO.pokemon[normKo(nm)]) KO.pokemon[normKo(nm)] = en;
+      }
+      if (def.ko && KO.koName.pokemon && !KO.koName.pokemon[en]) KO.koName.pokemon[en] = def.ko;
+      if (def.abilities && KO.speciesAbilities && !KO.speciesAbilities[en]) {
+        KO.speciesAbilities[en] = def.abilities.map((ab, i) => ({
+          en: ab, ko: (KO.koName.ability && KO.koName.ability[ab]) || ab, rate: i === 0 ? 100 : 0,
+        }));
+      }
+    }
+  })();
+
   // 한글 키보드에서 영문 스탯키가 만드는 자모도 같이 받는다: h→ㅗ a→ㅁ b→ㅠ c→ㅊ d→ㅇ s→ㄴ
   const STAT_KO = {
     특공: 'spa', 특방: 'spd', 체력: 'hp', 스피드: 'spe',

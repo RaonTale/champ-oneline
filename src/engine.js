@@ -76,6 +76,16 @@
   function makePokemon(side) {
     const {Pokemon} = window.calc;
     const opts = toOptions(side);
+    // 신규 포켓몬(엔진 미수록): 종족값·타입·무게·특성을 오버라이드로 주입한다.
+    const so = CHAMP.speciesOverrides && CHAMP.speciesOverrides[side.species];
+    if (so) {
+      const ovr = {};
+      if (so.baseStats) ovr.baseStats = so.baseStats;
+      if (so.types) ovr.types = so.types.slice();
+      if (so.weightkg != null) ovr.weightkg = so.weightkg;
+      if (so.abilities) ovr.abilities = so.abilities.reduce((m, a, i) => (m[i] = a, m), {});
+      opts.overrides = Object.assign(ovr, opts.overrides);
+    }
     // 변환자재/리베로 등 타입 변경: 사용자가 지정한 타입으로 오버라이드
     if (side.typeOverride && side.typeOverride.length) {
       opts.overrides = Object.assign({}, opts.overrides, {types: side.typeOverride.slice()});

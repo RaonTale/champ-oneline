@@ -10,6 +10,40 @@
   'use strict';
 
   window.CHAMP = {
+    // ── 0) 신규 포켓몬 추가 ──────────────────────────────────────────────────
+    // 챔피언스 업데이트로 "입국"한, 아직 엔진(gen0)에 없는 포켓몬을 여기에 추가한다.
+    //   key = 영문 종족명(폼은 하이픈, 예: 'Garchomp-Mega-Z').
+    //   ko       화면에 표시할 한글명 (입력도 이 이름으로)
+    //   aliases  줄임말·별칭(선택)
+    //   baseStats 종족값 {hp,atk,def,spa,spd,spe}
+    //   types    ['Grass'] 또는 ['Water','Ground'] (영문 타입)
+    //   weightkg 무게(kg) — 헤비봄버·풀묶기 등 무게 기술용
+    //   abilities 특성 영문명 배열, 첫 번째가 기본(미입력 시 자동 적용)
+    // 이 한 블록만 채우면 파싱·계산·표시·자동완성까지 전부 붙는다.
+    speciesOverrides: {
+      // ▼ 실제 작동 예시 (고릴타). 새 포켓몬은 이 형식을 복사해서 채우면 된다.
+      Rillaboom: {
+        ko: '고릴타', aliases: ['고릴라'],
+        baseStats: {hp: 100, atk: 125, def: 90, spa: 60, spd: 70, spe: 85},
+        types: ['Grass'], weightkg: 90,
+        abilities: ['Overgrow', 'Grassy Surge'],
+      },
+
+      // ▼ 아래는 형식만 보여주는 템플릿 — 실제 종족값을 채운 뒤 주석을 풀 것.
+      // Baxcalibur: {                       // 드닐레이브
+      //   ko: '드닐레이브',
+      //   baseStats: {hp: 115, atk: 145, def: 92, spa: 75, spd: 86, spe: 87},
+      //   types: ['Dragon', 'Ice'], weightkg: 210,
+      //   abilities: ['Thermal Exchange', 'Ice Body'],
+      // },
+      // 'Garchomp-Mega-Z': {                // 메가한카리아스Z (신규 메가는 폼명을 새 종족으로)
+      //   ko: '메가한카리아스Z', aliases: ['메가한카Z'],
+      //   baseStats: {hp: 108, atk: 170, def: 115, spa: 120, spd: 95, spe: 92},
+      //   types: ['Dragon', 'Ground'], weightkg: 95,
+      //   abilities: ['Sand Force'],
+      // },
+    },
+
     // ── 1) 기술 위력/타입/분류 보강 ─────────────────────────────────────────
     // gen0 엔진에 데이터가 비어 있거나(유령 기술) 값이 다른 기술을 실제 값으로 채운다.
     // 값 = {basePower, type, category}. 넣으면 결정력·데미지 모두 반영된다.

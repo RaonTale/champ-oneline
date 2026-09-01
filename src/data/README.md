@@ -4,10 +4,44 @@
 
 | 고치려는 것 | 편집할 파일 | 자동생성? |
 |---|---|---|
-| **한글 이름·별칭·줄임말** (포켓몬/기술/도구/특성) | [`../../tools/overrides.json`](../../tools/overrides.json) | ✅ → `ko.js` 재생성 필요 |
+| **신규 포켓몬 추가** (업데이트로 입국한 종족) | [`champions_data.js`](champions_data.js) `speciesOverrides` | ❌ 직접 편집, 즉시 반영 |
 | **기술·도구 수치** (위력·타입·고정데미지·도구 배수 등) | [`champions_data.js`](champions_data.js) | ❌ 직접 편집, 즉시 반영 |
+| **한글 이름·별칭·줄임말** (기존 포켓몬/기술/도구/특성) | [`../../tools/overrides.json`](../../tools/overrides.json) | ✅ → `ko.js` 재생성 필요 |
 
-> `ko.js` 는 **자동 생성물이라 직접 고치지 말 것.** 이름은 `overrides.json` 에서 고친다.
+> `ko.js` 는 **자동 생성물이라 직접 고치지 말 것.** 기존 이름은 `overrides.json` 에서 고친다.
+
+---
+
+## 0. 신규 포켓몬을 추가하고 싶다 → `champions_data.js` 의 `speciesOverrides`
+
+챔피언스 업데이트로 **엔진(gen0)에 아직 없는 포켓몬**이 들어왔을 때 쓴다.
+(엔진에 이미 있는데 한글명만 없으면 → 아래 3번 `overrides.json`.)
+
+`champions_data.js` 맨 위 `speciesOverrides` 에 한 마리당 한 블록을 넣는다:
+
+```js
+Rillaboom: {                 // key = 영문 종족명 (폼은 하이픈: 'Garchomp-Mega-Z')
+  ko: '고릴타',               // 화면 표시·입력에 쓸 한글명
+  aliases: ['고릴라'],         // 줄임말·별칭 (선택)
+  baseStats: {hp: 100, atk: 125, def: 90, spa: 60, spd: 70, spe: 85},
+  types: ['Grass'],           // 영문 타입 1~2개
+  weightkg: 90,               // 무게(kg) — 헤비봄버·풀묶기용
+  abilities: ['Overgrow', 'Grassy Surge'], // 첫 번째가 기본(미입력 시 자동)
+},
+```
+
+이 한 블록만 넣으면 **파싱·데미지/결정력/내구 계산·화면 표시·자동완성**이 기존 포켓몬과
+똑같이 붙는다. 재생성·빌드 필요 없음. (`champions_data.js` 안에 작동 예시 `Rillaboom`
+과 템플릿이 주석으로 들어 있으니 복사해서 채우면 된다.)
+
+- **영문 종족명 key** 는 @smogon/calc 표기 기준. 폼은 하이픈(`Tornadus-Therian`),
+  신규 메가는 새 폼명(`Garchomp-Mega-Z`)으로 넣는다.
+- **종족값·타입·무게** 는 도감에서 확인해 그대로 적는다.
+- **특성 영문명** 은 calc 표기(예: `Grassy Surge`). 한글 특성명이 `ko.js` 에 있으면
+  자동으로 한글로 표시된다.
+
+> 참고: 엔진에 없는 종족이라 `tools/build_ko.js` 재생성과는 무관하다. 이름 사전(`ko.js`)에
+> 넣는 게 아니라, 앱 로드 시 `parse.js` 가 자동으로 합친다.
 
 ---
 
