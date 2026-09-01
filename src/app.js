@@ -338,6 +338,8 @@
         if (side.move) filled.add('move');
         if (side.item || side.noItem) filled.add('item');
         if (side.ability) filled.add('ability');
+        // 메가폼은 메가스톤을 낀 상태라 다른 도구를 못 든다 → 도구 추천 제외
+        if (side.species && /-Mega/.test(side.species)) filled.add('item');
       }
     } catch (e) { /* 무시 */ }
     if (isDefender) filled.add('move'); // 방어측은 기술이 없음
