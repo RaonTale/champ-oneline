@@ -46,6 +46,21 @@
         types: ['Dragon'], weightkg: 95,
         abilities: ['Levitate'],
       },
+      // 메가앱솔Z — ⚠️ 엔진 업데이트로 정식 수록되면 삭제. 예리함(Sharpness)은 엔진 지원(정상 작동).
+      'Absol-Mega-Z': {
+        ko: '메가앱솔Z', aliases: ['앱솔Z'],
+        baseStats: {hp: 65, atk: 154, def: 60, spa: 75, spd: 60, spe: 151},
+        types: ['Dark', 'Ghost'], weightkg: 49,
+        abilities: ['Sharpness'],
+      },
+      // 메가루카리오Z — ⚠️ 엔진 업데이트로 정식 수록되면 삭제.
+      //   파동의방호(받는 접촉기 데미지 ½)는 엔진에 없는 신규 특성 → 지금은 표기만, 효과 미반영.
+      'Lucario-Mega-Z': {
+        ko: '메가루카리오Z', aliases: ['메가루카Z', '루카Z'],
+        baseStats: {hp: 70, atk: 100, def: 70, spa: 164, spd: 70, spe: 151},
+        types: ['Fighting', 'Steel'], weightkg: 57.5,
+        abilities: ['파동의방호'],
+      },
     },
 
     // ── 내 줄임말 ────────────────────────────────────────────────────────────
