@@ -67,8 +67,10 @@
     if (side.noItem) opts.item = '';
     else if (side.item) opts.item = side.item;
     else {
+      // 메가폼이면 대응 메가스톤 자동 장착 — 단 gen0에 실제로 있는 도구일 때만.
+      // (신규 커스텀 메가는 스톤이 아이템 데이터에 없어, 끼우면 엔진이 크래시한다. 스탯은 오버라이드로 이미 반영됨.)
       const stone = megaStoneFor(side.species);
-      if (stone) opts.item = stone;
+      if (stone && gen().items.get(window.calc.toID(stone))) opts.item = stone;
     }
     return opts;
   }

@@ -20,28 +20,32 @@
     //   weightkg 무게(kg) — 헤비봄버·풀묶기 등 무게 기술용
     //   abilities 특성 영문명 배열, 첫 번째가 기본(미입력 시 자동 적용)
     // 이 한 블록만 채우면 파싱·계산·표시·자동완성까지 전부 붙는다.
+    //
+    // ⚠️ 여기 항목은 전부 "임시 다리"다. 엔진(vendor/calc)을 업데이트해서 해당 포켓몬이
+    //    정식 수록되면 그 항목을 반드시 삭제할 것. (안 지우면 임시 종족값이 정식 데이터를 덮어쓴다.)
     speciesOverrides: {
-      // ▼ 실제 작동 예시 (고릴타). 새 포켓몬은 이 형식을 복사해서 채우면 된다.
+      // 고릴타 — ⚠️ 엔진 업데이트로 정식 수록되면 삭제
       Rillaboom: {
         ko: '고릴타', aliases: ['고릴라'],
         baseStats: {hp: 100, atk: 125, def: 90, spa: 60, spd: 70, spe: 85},
         types: ['Grass'], weightkg: 90,
         abilities: ['Overgrow', 'Grassy Surge'],
       },
-
-      // ▼ 아래는 형식만 보여주는 템플릿 — 실제 종족값을 채운 뒤 주석을 풀 것.
-      // Baxcalibur: {                       // 드닐레이브
-      //   ko: '드닐레이브',
-      //   baseStats: {hp: 115, atk: 145, def: 92, spa: 75, spd: 86, spe: 87},
-      //   types: ['Dragon', 'Ice'], weightkg: 210,
-      //   abilities: ['Thermal Exchange', 'Ice Body'],
-      // },
-      // 'Garchomp-Mega-Z': {                // 메가한카리아스Z (신규 메가는 폼명을 새 종족으로)
-      //   ko: '메가한카리아스Z', aliases: ['메가한카Z'],
-      //   baseStats: {hp: 108, atk: 170, def: 115, spa: 120, spd: 95, spe: 92},
-      //   types: ['Dragon', 'Ground'], weightkg: 95,
-      //   abilities: ['Sand Force'],
-      // },
+      // 드닐레이브 — ⚠️ 엔진 업데이트로 정식 수록되면 삭제 (종족값·무게는 전국도감 표준값)
+      Baxcalibur: {
+        ko: '드닐레이브', aliases: ['드닐'],
+        baseStats: {hp: 115, atk: 145, def: 92, spa: 75, spd: 86, spe: 87},
+        types: ['Dragon', 'Ice'], weightkg: 210,
+        abilities: ['Thermal Exchange', 'Ice Body'],
+      },
+      // 메가한카리아스Z — ⚠️ 엔진 업데이트로 정식 수록되면 삭제
+      //   기존 메가진화와 다른 신규 폼. 부유·순수 드래곤. 무게는 미지정이라 한카리아스 기준(95kg).
+      'Garchomp-Mega-Z': {
+        ko: '메가한카리아스Z', aliases: ['메가한카Z', '한카Z'],
+        baseStats: {hp: 108, atk: 130, def: 85, spa: 141, spd: 85, spe: 151},
+        types: ['Dragon'], weightkg: 95,
+        abilities: ['Levitate'],
+      },
     },
 
     // ── 1) 기술 위력/타입/분류 보강 ─────────────────────────────────────────
