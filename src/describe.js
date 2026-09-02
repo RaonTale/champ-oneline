@@ -193,8 +193,10 @@
     const ko = koChanceKo(result);
     const minPct = min / maxHP * 100;
     const maxPct = max / maxHP * 100;
+    const mu = out.matchup;
     return {
       head, headParts,
+      index: mu ? `결정력 ${fmt(mu.fp)} → ${mu.cat}내구 ${fmt(mu.dur)}` : null,
       main: `${fmt(min)}~${fmt(max)} (${pct(minPct)}~${pct(maxPct)}%)`,
       verdict: ko,
       sub: [fieldLabel(spec.field), `상대 체력 ${fmt(maxHP)}`].filter(Boolean).join(' · '),

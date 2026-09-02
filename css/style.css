@@ -282,7 +282,14 @@ body {
   margin-bottom: 10px;
   word-break: keep-all;
 }
-
+/* 데미지 위 매치업 지표(결정력 → 내구) */
+.dmgIndex {
+  font-size: 13px;
+  color: var(--muted);
+  margin: -4px 0 6px;
+  font-variant-numeric: tabular-nums;
+  word-break: keep-all;
+}
 
 .main {
   font-size: 28px;

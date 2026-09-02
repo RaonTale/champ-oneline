@@ -252,6 +252,7 @@
     const parts = [];
     parts.push(`<div class="mode mode-${spec.mode}">${MODE_LABEL[spec.mode]}</div>`);
     parts.push(`<div class="matchup">${esc(desc.head)}</div>`);
+    if (desc.index) parts.push(`<div class="dmgIndex">${esc(desc.index)}</div>`);
     parts.push(`<div class="main">${esc(desc.main)}</div>`);
     if (desc.verdict) parts.push(`<div class="verdict">${esc(desc.verdict)}</div>`);
     if (desc.bar) parts.push(dmgBarHTML(desc.bar));

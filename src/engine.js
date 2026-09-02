@@ -143,7 +143,17 @@
     const kind = specialKind(move);
     if (kind === 'reflect' || kind === 'stockpile')
       return {result, attacker, defender, move, field, specialText: specialNote(kind)};
-    return {result, attacker, defender, move, field};
+    // 매치업 지표: 공격측 결정력 → 방어측 내구(기술 분류별). 상성 배율은 빠진 순수 공방 지표.
+    let matchup = null;
+    try {
+      const fpRes = firepower(spec);
+      if (fpRes && fpRes.value != null && !fpRes.notApplicable && !fpRes.fixedDamage) {
+        const dur = durability({defender: spec.defender, field: spec.field});
+        const special = move.category === 'Special';
+        matchup = {fp: fpRes.value, dur: special ? dur.special : dur.physical, cat: special ? '특수' : '물리'};
+      }
+    } catch (e) { /* 무시 */ }
+    return {result, attacker, defender, move, field, matchup};
   }
 
   // ── 결정력 ────────────────────────────────────────────────────────────────
