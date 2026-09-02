@@ -187,6 +187,7 @@
         head, headParts,
         main: '데미지 없음 (무효)',
         sub: fieldLabel(spec.field),
+        type: out.moveType, eff: out.effective,
       };
     }
 
@@ -201,6 +202,7 @@
       verdict: ko,
       sub: [fieldLabel(spec.field), `상대 체력 ${fmt(maxHP)}`].filter(Boolean).join(' · '),
       bar: {min: minPct, max: maxPct, lethal: minPct >= 100}, // 데미지 바용 (HP 대비 %)
+      type: out.moveType, eff: out.effective,
     };
   }
 

@@ -297,6 +297,8 @@ body {
   letter-spacing: -.02em;
   word-break: keep-all;
 }
+/* 상성 배지 (효과 굉장함 ×2 등) — 색은 인라인으로 지정 */
+.effBadge { font-size: 14px; font-weight: 700; margin-left: 8px; white-space: nowrap; }
 .verdict {
   margin-top: 8px;
   font-size: 16px;

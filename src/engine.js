@@ -153,7 +153,24 @@
         matchup = {fp: fpRes.value, dur: special ? dur.special : dur.physical, cat: special ? '특수' : '물리'};
       }
     } catch (e) { /* 무시 */ }
-    return {result, attacker, defender, move, field, matchup};
+    // 기술 타입 + 상성 배율 (무효는 특성/타입 관계없이 0으로). 공격기에만.
+    let moveType = null, effective = null;
+    if (move.category !== 'Status') {
+      moveType = move.type;
+      const dmg = result.damage;
+      const flat = Array.isArray(dmg) ? [].concat.apply([], dmg) : [dmg]; // 무효는 스칼라 0
+      const maxDmg = flat.length ? Math.max.apply(null, flat) : 0;
+      let te = 1;
+      const gme = window.calc.getMoveEffectiveness;
+      try {
+        if (gme && defender.types && defender.types.length) {
+          te = gme(g, move, defender.types[0], false, field.isGravity, false);
+          if (defender.types[1]) te *= gme(g, move, defender.types[1], false, field.isGravity, false);
+        }
+      } catch (e) { te = 1; }
+      effective = maxDmg <= 0 ? 0 : te;
+    }
+    return {result, attacker, defender, move, field, matchup, moveType, effective};
   }
 
   // ── 결정력 ────────────────────────────────────────────────────────────────

@@ -68,6 +68,27 @@
   const esc = s => String(s).replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
   const MODE_LABEL = {damage: '데미지', firepower: '결정력', durability: '내구력'};
 
+  // 타입별 색(데미지 칸 옅은 배경) · 상성 배율 라벨(효과 굉장함 등)
+  const TYPE_COLOR = {
+    Normal: '#9fa19f', Fire: '#e0803a', Water: '#4a80e0', Electric: '#e6c22e', Grass: '#4caf50',
+    Ice: '#57c4cf', Fighting: '#d5425a', Poison: '#a95bc0', Ground: '#cba24a', Flying: '#84a7e6',
+    Psychic: '#e6608a', Bug: '#93b035', Rock: '#b8a35a', Ghost: '#6a5ab0', Dragon: '#5a5ad8',
+    Dark: '#5a5560', Steel: '#7f909e', Fairy: '#e08ac0',
+  };
+  const EFF_INFO = {
+    0: {t: '효과 없음', c: '#8a8f98'},
+    0.25: {t: '효과 매우 별로', c: '#d5425a'},
+    0.5: {t: '효과 별로', c: '#e0803a'},
+    2: {t: '효과 굉장함', c: '#2f9e6a'},
+    4: {t: '효과 매우 굉장함', c: '#1f9d55'},
+  };
+  function typeTint(en, alpha) {
+    const hex = TYPE_COLOR[en];
+    if (!hex) return '';
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+
   // ── 상단 토글 상태 ─────────────────────────────────────────────────────────
   const WEATHERS = [
     {key: 'Sun', label: '쾌청'},
@@ -212,6 +233,7 @@
 
   // ── 렌더 ───────────────────────────────────────────────────────────────────
   function render() {
+    $result.style.background = ''; // 이전 타입 배경 리셋 (데미지 결과에서만 다시 칠함)
     const text = $input.value;
     if (!text.trim()) {
       $result.innerHTML = '<div class="placeholder">포켓몬과 기술을 입력하면 결과가 바로 나옵니다.</div>';
@@ -253,11 +275,19 @@
     parts.push(`<div class="mode mode-${spec.mode}">${MODE_LABEL[spec.mode]}</div>`);
     parts.push(`<div class="matchup">${esc(desc.head)}</div>`);
     if (desc.index) parts.push(`<div class="dmgIndex">${esc(desc.index)}</div>`);
-    parts.push(`<div class="main">${esc(desc.main)}</div>`);
+    // 상성 배지 (효과 굉장함 ×2 등) — 중립(×1)은 표시 안 함
+    let mainHtml = esc(desc.main);
+    const ei = desc.eff != null && desc.eff !== 1 ? EFF_INFO[desc.eff] : null;
+    if (ei) mainHtml += ` <span class="effBadge" style="color:${ei.c}">${ei.t} ×${desc.eff}</span>`;
+    parts.push(`<div class="main">${mainHtml}</div>`);
     if (desc.verdict) parts.push(`<div class="verdict">${esc(desc.verdict)}</div>`);
     if (desc.bar) parts.push(dmgBarHTML(desc.bar));
     if (desc.sub) parts.push(`<div class="sub">${esc(desc.sub)}</div>`);
     $result.innerHTML = parts.join('');
+    // 데미지 칸 옅은 타입 배경
+    $result.style.background = desc.type
+      ? `linear-gradient(0deg, ${typeTint(desc.type, 0.10)}, ${typeTint(desc.type, 0.10)}), var(--card)`
+      : '';
 
     renderHint(spec);
   }
