@@ -338,7 +338,9 @@
     const pos = $input.selectionStart;
     const left = val.slice(0, pos).match(/[^\s]*$/)[0];
     const right = val.slice(pos).match(/^[^\s]*/)[0];
-    return {start: pos - left.length, end: pos + right.length, query: left};
+    // 검색어는 커서가 놓인 단어 '전체'(왼쪽+오른쪽). 그래야 이미 입력된 토큰의
+    // 어느 위치를 클릭해도 그 단어로 자동완성이 뜬다. (입력 중엔 커서가 끝이라 left와 동일)
+    return {start: pos - left.length, end: pos + right.length, query: left + right};
   }
 
   // 커서가 놓인 side(vs 기준)의 텍스트를 구한다(편집 중 토큰은 제외). 방어측 여부도 함께.
