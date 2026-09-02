@@ -338,9 +338,7 @@
     const pos = $input.selectionStart;
     const left = val.slice(0, pos).match(/[^\s]*$/)[0];
     const right = val.slice(pos).match(/^[^\s]*/)[0];
-    // 검색어는 커서가 놓인 단어 '전체'(왼쪽+오른쪽). 그래야 이미 입력된 토큰의
-    // 어느 위치를 클릭해도 그 단어로 자동완성이 뜬다. (입력 중엔 커서가 끝이라 left와 동일)
-    return {start: pos - left.length, end: pos + right.length, query: left + right};
+    return {start: pos - left.length, end: pos + right.length, query: left};
   }
 
   // 커서가 놓인 side(vs 기준)의 텍스트를 구한다(편집 중 토큰은 제외). 방어측 여부도 함께.
@@ -556,6 +554,12 @@
     if (blurTimer) { clearTimeout(blurTimer); blurTimer = null; } // 재진입 시 예약된 숨김 취소
     // 클릭으로 재진입하면 focus 시점엔 커서가 아직 0이라, 커서가 옮겨진 뒤(다음 틱) 갱신한다.
     setTimeout(updateSuggest, 0);
+  });
+  // 이미 포커스된 입력창 안에서 다른 단어를 클릭/커서이동하면(입력·포커스 이벤트가 안 남)
+  // 그 위치의 단어로 자동완성을 다시 띄운다. (커서 이동 뒤 다음 틱에 갱신)
+  $input.addEventListener('click', () => { setTimeout(updateSuggest, 0); });
+  $input.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') updateSuggest();
   });
 
   // ── 예시 칩 ────────────────────────────────────────────────────────────────
