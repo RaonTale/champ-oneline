@@ -61,6 +61,21 @@
     }
   })();
 
+  // 표시명에 공백이 있으면(예: "윈디(히스이의 모습)") 파서가 여러 토큰으로 쪼개 매칭에 실패한다.
+  // 공백을 없앤 표시명으로 바꾸고 그 이름도 입력 키로 등록 → 자동완성·계산 모두 정상 인식.
+  (() => {
+    if (!KO.koName || !KO.koName.pokemon) return;
+    for (const en of Object.keys(KO.koName.pokemon)) {
+      const disp = KO.koName.pokemon[en];
+      if (disp && /\s/.test(disp)) {
+        const nospace = disp.replace(/\s+/g, '');
+        KO.koName.pokemon[en] = nospace;
+        const key = normKo(nospace);
+        if (!KO.pokemon[key]) KO.pokemon[key] = en;
+      }
+    }
+  })();
+
   // 한글 키보드에서 영문 스탯키가 만드는 자모도 같이 받는다: h→ㅗ a→ㅁ b→ㅠ c→ㅊ d→ㅇ s→ㄴ
   const STAT_KO = {
     특공: 'spa', 특방: 'spd', 체력: 'hp', 스피드: 'spe',
