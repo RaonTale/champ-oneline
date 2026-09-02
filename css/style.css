@@ -378,6 +378,25 @@ body {
 .foot a { color: var(--muted); }
 .foot a:hover { color: var(--accent); }
 
+/* 모바일 전용 빠른입력 바 — 키보드 전환 없이 자주 쓰는 토큰을 원탭으로 */
+.quickbar { display: none; }
+@media (max-width: 640px) {
+  .quickbar { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+  .qkey {
+    flex: 1 1 0; min-width: 42px;
+    padding: 11px 6px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--ink);
+    font-size: 16px; font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .qkey:active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+}
+
 @media (max-width: 480px) {
   .wrap { padding: 20px 14px 48px; }
   .main { font-size: 24px; }

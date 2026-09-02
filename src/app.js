@@ -434,6 +434,41 @@
     $chips.appendChild(b);
   }
 
+  // ── 모바일 빠른입력 바 ──────────────────────────────────────────────────────
+  // word:true 는 독립 토큰(앞뒤 공백), 아니면 지금 단어 뒤에 그대로 붙인다.
+  const QUICK = [
+    {t: 'vs', word: true}, {t: '+'}, {t: '-'}, {t: '%'}, {t: '32'},
+    {t: '급소', word: true}, {t: '분산', word: true},
+  ];
+  function insertQuick(text, word) {
+    let start = $input.selectionStart, end = $input.selectionEnd;
+    if (start == null) { start = end = $input.value.length; }
+    const before = $input.value.slice(0, start);
+    const after = $input.value.slice(end);
+    let ins = text;
+    if (word) {
+      if (before && !/\s$/.test(before)) ins = ' ' + ins;  // 앞 단어와 붙지 않게
+      if (!after || !/^\s/.test(after)) ins = ins + ' ';   // 뒤에 공백 없을 때만 (이중 공백 방지)
+    }
+    $input.value = before + ins + after;
+    const caret = before.length + ins.length;
+    $input.focus();
+    $input.setSelectionRange(caret, caret);
+    render(); updateSuggest();
+  }
+  const $quickbar = document.getElementById('quickbar');
+  if ($quickbar) {
+    for (const k of QUICK) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'qkey';
+      b.textContent = k.t;
+      b.addEventListener('mousedown', ev => ev.preventDefault()); // 입력창 blur 방지
+      b.addEventListener('click', () => insertQuick(k.t, !!k.word));
+      $quickbar.appendChild(b);
+    }
+  }
+
   buildControls();
   $input.addEventListener('input', () => { render(); updateSuggest(); });
 
