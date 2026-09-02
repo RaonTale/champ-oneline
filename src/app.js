@@ -438,7 +438,7 @@
   // word:true 는 독립 토큰(앞뒤 공백), 아니면 지금 단어 뒤에 그대로 붙인다.
   const QUICK = [
     {t: 'vs', word: true}, {t: '+'}, {t: '-'}, {t: '%'}, {t: '32'},
-    {t: '급소', word: true}, {t: '분산', word: true},
+    {t: '급소', word: true},
   ];
   function insertQuick(text, word) {
     let start = $input.selectionStart, end = $input.selectionEnd;

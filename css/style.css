@@ -110,7 +110,8 @@ body {
   padding: 0 4px;
 }
 .ctrlGroup { display: flex; align-items: center; gap: 8px; }
-.ctrlLabel { font-size: 12px; font-weight: 700; color: var(--muted); }
+/* 라벨 고정 너비 — 날씨/필드/벽 글자수가 달라도 버튼 시작점이 정렬되게(모바일에서 줄바꿈 시) */
+.ctrlLabel { font-size: 12px; font-weight: 700; color: var(--muted); min-width: 30px; }
 .seg {
   display: inline-flex;
   gap: 4px;
