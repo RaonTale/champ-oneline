@@ -552,7 +552,8 @@
   $input.addEventListener('blur', () => { blurTimer = setTimeout(hideSuggest, 120); });
   $input.addEventListener('focus', () => {
     if (blurTimer) { clearTimeout(blurTimer); blurTimer = null; } // 재진입 시 예약된 숨김 취소
-    updateSuggest();
+    // 클릭으로 재진입하면 focus 시점엔 커서가 아직 0이라, 커서가 옮겨진 뒤(다음 틱) 갱신한다.
+    setTimeout(updateSuggest, 0);
   });
 
   // ── 예시 칩 ────────────────────────────────────────────────────────────────
