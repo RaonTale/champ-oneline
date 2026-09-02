@@ -397,6 +397,12 @@ body {
 }
 .helpTable tr:last-child th, .helpTable tr:last-child td { border-bottom: none; }
 .helpMore { color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+.helpTip {
+  margin: 10px 0 4px; padding: 10px 12px;
+  background: var(--accent-soft); border: 1px solid var(--line);
+  border-radius: 10px; font-size: 13px; line-height: 1.6; color: var(--ink);
+}
+.helpTipEx { color: var(--muted); white-space: nowrap; }
 
 .foot {
   margin-top: 32px;
