@@ -547,7 +547,13 @@
     else if (ev.key === 'Escape') { ev.preventDefault(); hideSuggest(); }
   });
 
-  $input.addEventListener('blur', () => setTimeout(hideSuggest, 120));
+  // 밖을 누르면 자동완성 숨김. 단, 입력창을 다시 누르면(포커스) 커서 위치 기준으로 이어서 보인다.
+  let blurTimer = null;
+  $input.addEventListener('blur', () => { blurTimer = setTimeout(hideSuggest, 120); });
+  $input.addEventListener('focus', () => {
+    if (blurTimer) { clearTimeout(blurTimer); blurTimer = null; } // 재진입 시 예약된 숨김 취소
+    updateSuggest();
+  });
 
   // ── 예시 칩 ────────────────────────────────────────────────────────────────
   for (const ex of EXAMPLES) {
