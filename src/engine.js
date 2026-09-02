@@ -162,15 +162,20 @@
       const dmg = result.damage;
       const flat = Array.isArray(dmg) ? [].concat.apply([], dmg) : [dmg]; // 무효는 스칼라 0
       const maxDmg = flat.length ? Math.max.apply(null, flat) : 0;
-      let te = 1;
-      const gme = window.calc.getMoveEffectiveness;
-      try {
-        if (gme && defender.types && defender.types.length) {
-          te = gme(g, emove, defender.types[0], false, field.isGravity, false);
-          if (defender.types[1]) te *= gme(g, emove, defender.types[1], false, field.isGravity, false);
-        }
-      } catch (e) { te = 1; }
-      effective = maxDmg <= 0 ? 0 : te;
+      if (fixedDamageOf(attacker, move) > 0) {
+        // 고정 데미지 기술(지구던지기 등)은 상성 배율과 무관(면역만 영향) → 무효만 표시.
+        effective = maxDmg <= 0 ? 0 : null;
+      } else {
+        let te = 1;
+        const gme = window.calc.getMoveEffectiveness;
+        try {
+          if (gme && defender.types && defender.types.length) {
+            te = gme(g, emove, defender.types[0], false, field.isGravity, false);
+            if (defender.types[1]) te *= gme(g, emove, defender.types[1], false, field.isGravity, false);
+          }
+        } catch (e) { te = 1; }
+        effective = maxDmg <= 0 ? 0 : te;
+      }
     }
     return {result, attacker, defender, move, field, matchup, moveType, effective};
   }
