@@ -210,10 +210,11 @@
     // 고정 데미지 기술: 결정력 대신 깎는 HP를 그대로 보여준다.
     const headParts = [...sideSegs(spec.attacker), moveSeg(spec)];
     const head = headParts.map(s => s.t).join(' ');
+    const mvType = out.move && out.move.type;   // 결과 칸 타입 배경색용
 
     if (out.fixedDamage) {
       return {
-        head, headParts,
+        head, headParts, type: mvType,
         main: `고정 데미지 ${fmt(out.value)}`,
         sub: out.finalGambit ? `자신의 HP만큼 (현재 ${fmt(out.value)})` : '레벨 50 기준 고정값',
       };
@@ -237,7 +238,7 @@
       sub = `${stat} ${out.effAtk} × 위력 ${out.effBp}`;
     }
     return {
-      head, headParts,
+      head, headParts, type: mvType,
       main: `결정력 ${fmt(out.value)}`,
       sub,
     };

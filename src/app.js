@@ -284,9 +284,9 @@
     if (desc.bar) parts.push(dmgBarHTML(desc.bar));
     if (desc.sub) parts.push(`<div class="sub">${esc(desc.sub)}</div>`);
     $result.innerHTML = parts.join('');
-    // 데미지 칸 옅은 타입 배경
+    // 결과 칸 타입 배경색
     $result.style.background = desc.type
-      ? `linear-gradient(0deg, ${typeTint(desc.type, 0.10)}, ${typeTint(desc.type, 0.10)}), var(--card)`
+      ? `linear-gradient(0deg, ${typeTint(desc.type, 0.16)}, ${typeTint(desc.type, 0.16)}), var(--card)`
       : '';
 
     renderHint(spec);
