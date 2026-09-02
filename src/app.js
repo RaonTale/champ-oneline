@@ -310,9 +310,8 @@
     return {start: pos - left.length, end: pos + right.length, query: left};
   }
 
-  // 커서가 놓인 side(vs 기준)에서 이미 채워진 슬롯을 구한다.
-  // 같은 종류(포켓몬·기술·도구·특성)는 다시 추천하지 않고, 방어측(vs 뒤)은 기술을 안 쓴다.
-  function filledCatsHere() {
+  // 커서가 놓인 side(vs 기준)의 텍스트를 구한다(편집 중 토큰은 제외). 방어측 여부도 함께.
+  function currentSide() {
     const val = $input.value;
     const pos = $input.selectionStart;
     // vs 경계(첫 번째): 'vs' 단어 또는 화살표(->, =>, ＞, >)
@@ -321,27 +320,26 @@
     if (vm) { bStart = vm.index + vm[1].length; bEnd = bStart + 2; }
     const am = /->|=>|＞|>/.exec(val);
     if (am && (bStart < 0 || am.index < bStart)) { bStart = am.index; bEnd = am.index + am[0].length; }
-
     const isDefender = bStart >= 0 && pos > bStart;
-    // 지금 편집 중인 토큰은 빼고(공백으로 치환) 그 side 텍스트만 해석한다.
     const {start, end} = currentToken();
     const cleaned = val.slice(0, start) + ' '.repeat(end - start) + val.slice(end);
-    const sideText = bStart < 0 ? cleaned
-      : isDefender ? cleaned.slice(bEnd) : cleaned.slice(0, bStart);
+    const sideText = bStart < 0 ? cleaned : isDefender ? cleaned.slice(bEnd) : cleaned.slice(0, bStart);
+    let side = null;
+    try { const spec = window.CC.parse(sideText); side = spec.attacker || spec.defender; } catch (e) { /* 무시 */ }
+    return {side, isDefender};
+  }
 
+  // 같은 종류(포켓몬·기술·도구·특성)는 다시 추천하지 않고, 방어측(vs 뒤)은 기술을 안 쓴다.
+  function filledCatsHere() {
+    const {side, isDefender} = currentSide();
     const filled = new Set();
-    try {
-      const spec = window.CC.parse(sideText);
-      const side = spec.attacker || spec.defender;
-      if (side) {
-        if (side.species) filled.add('pokemon');
-        if (side.move) filled.add('move');
-        if (side.item || side.noItem) filled.add('item');
-        if (side.ability) filled.add('ability');
-        // 메가폼은 메가스톤을 낀 상태라 다른 도구를 못 든다 → 도구 추천 제외
-        if (side.species && /-Mega/.test(side.species)) filled.add('item');
-      }
-    } catch (e) { /* 무시 */ }
+    if (side) {
+      if (side.species) filled.add('pokemon');
+      if (side.move) filled.add('move');
+      if (side.item || side.noItem) filled.add('item');
+      if (side.ability) filled.add('ability');
+      if (side.species && /-Mega/.test(side.species)) filled.add('item'); // 메가폼은 스톤 착용 → 도구 제외
+    }
     if (isDefender) filled.add('move'); // 방어측은 기술이 없음
     return filled;
   }
@@ -376,6 +374,7 @@
   }
 
   function renderSuggest() {
+    $suggest.classList.remove('asPanel');
     if (!sugItems.length) { $suggest.style.display = 'none'; $suggest.innerHTML = ''; return; }
     $suggest.innerHTML = sugItems.map((e, i) =>
       `<div class="sItemRow${i === sugActive ? ' active' : ''}" data-idx="${i}">` +
@@ -385,12 +384,15 @@
   }
 
   function updateSuggest() {
+    const panel = listPanelHere();
+    if (panel) { curPanel = panel; renderListPanel(); return; }   // "특성"/"기술" → 목록 패널
+    curPanel = null;
     sugItems = computeSuggestions(currentToken().query);
     sugActive = sugItems.length ? 0 : -1;
     renderSuggest();
   }
 
-  function hideSuggest() { sugItems = []; sugActive = -1; renderSuggest(); }
+  function hideSuggest() { curPanel = null; sugItems = []; sugActive = -1; renderSuggest(); }
 
   function acceptSuggest(idx) {
     const e = sugItems[idx];
@@ -407,7 +409,91 @@
     $input.focus();
   }
 
+  // ── 특성/기술 목록 패널 ─────────────────────────────────────────────────────
+  // 포켓몬 뒤에 "특성"/"기술" 을 치면 그 포켓몬의 특성/학습기 목록을 패널로 띄운다.
+  const CAT_KO_SHORT = {Physical: '물리', Special: '특수', Status: '변화'};
+  const CAT_SORT = {Physical: 0, Special: 1, Status: 2};
+  let panelSort = 'type';   // 'type' | 'cat' | 'power'
+  let curPanel = null;      // {kind:'ability'|'move', species}
+
+  const koType = en => (window.KO.koName.type && window.KO.koName.type[en]) || en || '-';
+  function baseLearnFor(en) {
+    const L = window.LEARN || {};
+    return L[en] || L[en.split('-')[0]] || null;   // 폼은 원종 학습기로
+  }
+  function listPanelHere() {
+    const q = normKo(currentToken().query);
+    if (q !== '특성' && q !== '기술') return null;
+    const {side} = currentSide();
+    if (!side || !side.species) return null;
+    return {kind: q === '특성' ? 'ability' : 'move', species: side.species};
+  }
+  function renderListPanel() {
+    if (!curPanel) return;
+    const {kind, species} = curPanel;
+    const spKo = (window.KO.koName.pokemon && window.KO.koName.pokemon[species]) || species;
+    let html = '';
+    if (kind === 'ability') {
+      const roster = (window.KO.speciesAbilities && window.KO.speciesAbilities[species]) || [];
+      html += `<div class="lpHead"><span class="lpTitle">특성 · ${esc(spKo)}</span></div>`;
+      if (!roster.length) html += '<div class="lpEmpty">특성 정보가 없습니다</div>';
+      for (const a of roster) {
+        html += `<div class="lpRow" data-ins="${esc(a.ko || a.en)}">` +
+          `<span class="lpName">${esc(a.ko || a.en)}</span>` +
+          (a.rate > 0 ? `<span class="lpRate">${a.rate}%</span>` : '') + '</div>';
+      }
+    } else {
+      const info = window.MOVEINFO || {};
+      const moves = (baseLearnFor(species) || []).slice();
+      const koMv = en => (window.KO.koName.move[en] || en);
+      moves.sort((a, b) => {
+        const ia = info[a] || {}, ib = info[b] || {};
+        const byPow = (ib.p || 0) - (ia.p || 0);
+        if (panelSort === 'power') return byPow || koMv(a).localeCompare(koMv(b));
+        if (panelSort === 'cat') {
+          const ca = CAT_SORT[ia.c] == null ? 3 : CAT_SORT[ia.c];
+          const cb = CAT_SORT[ib.c] == null ? 3 : CAT_SORT[ib.c];
+          return (ca - cb) || byPow;
+        }
+        return String(ia.t || '').localeCompare(String(ib.t || '')) || byPow;
+      });
+      const btn = s => `<button type="button" class="lpSortBtn${panelSort === s ? ' on' : ''}" data-sort="${s}">` +
+        (s === 'type' ? '타입' : s === 'cat' ? '분류' : '위력') + '</button>';
+      html += `<div class="lpHead"><span class="lpTitle">기술 · ${esc(spKo)} <span class="lpCount">${moves.length}</span></span>` +
+        `<div class="lpSort">${btn('type')}${btn('cat')}${btn('power')}</div></div>`;
+      if (!moves.length) html += '<div class="lpEmpty">학습기 데이터가 없습니다</div>';
+      for (const en of moves) {
+        const i = info[en] || {};
+        html += `<div class="lpRow lpMove" data-ins="${esc(koMv(en))}">` +
+          `<span class="lpName">${esc(koMv(en))}</span>` +
+          `<span class="lpType">${esc(koType(i.t))}</span>` +
+          `<span class="lpCat lpc-${i.c}">${CAT_KO_SHORT[i.c] || '-'}</span>` +
+          `<span class="lpPow">${i.p ? i.p : '-'}</span>` +
+          `<span class="lpPp">${i.pp != null ? i.pp : '-'}</span></div>`;
+      }
+    }
+    $suggest.innerHTML = html;
+    $suggest.classList.add('asPanel');
+    $suggest.style.display = 'block';
+  }
+  function acceptPanel(name) {
+    const {start, end} = currentToken();
+    const val = $input.value;
+    const insert = name + (end >= val.length ? ' ' : '');
+    $input.value = val.slice(0, start) + insert + val.slice(end);
+    const caret = start + insert.length;
+    curPanel = null;
+    hideSuggest();
+    $input.setSelectionRange(caret, caret);
+    render();
+    $input.focus();
+  }
+
   $suggest.addEventListener('mousedown', ev => {
+    const sortBtn = ev.target.closest('.lpSortBtn');
+    if (sortBtn) { ev.preventDefault(); panelSort = sortBtn.getAttribute('data-sort'); renderListPanel(); return; }
+    const lp = ev.target.closest('.lpRow');
+    if (lp) { ev.preventDefault(); acceptPanel(lp.getAttribute('data-ins')); return; }
     const row = ev.target.closest('.sItemRow');
     if (!row) return;
     ev.preventDefault();                       // 입력창 blur 방지

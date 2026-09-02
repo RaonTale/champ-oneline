@@ -189,6 +189,34 @@ body {
 .sMove { background: #3a72e0; }
 .sItem { background: #e0803a; }
 .sAbil { background: #2f9e6a; }
+
+/* 특성/기술 목록 패널 (suggest 컨테이너 재사용) */
+.suggest.asPanel { max-height: min(60vh, 380px); }
+.lpHead {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 9px 12px; background: var(--card); border-bottom: 1px solid var(--line);
+  font-size: 12px; font-weight: 700;
+}
+.lpTitle { color: var(--ink); }
+.lpCount { color: var(--muted); font-weight: 600; }
+.lpSort { display: flex; gap: 4px; }
+.lpSortBtn {
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  font-family: inherit; font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 999px; cursor: pointer;
+}
+.lpSortBtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.lpRow { display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; }
+.lpRow:hover { background: var(--bg); }
+.lpName { flex: 1 1 auto; min-width: 0; font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lpRate { flex: 0 0 auto; color: var(--accent); font-size: 12px; font-weight: 600; }
+.lpMove .lpType { flex: 0 0 42px; text-align: center; font-size: 11px; color: var(--muted); }
+.lpMove .lpCat { flex: 0 0 30px; text-align: center; font-size: 11px; font-weight: 700; }
+.lpc-Physical { color: #e0803a; } .lpc-Special { color: #3f7fe6; } .lpc-Status { color: var(--muted); }
+.lpMove .lpPow { flex: 0 0 34px; text-align: right; font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--ink); }
+.lpMove .lpPp { flex: 0 0 40px; text-align: right; font-size: 11px; color: var(--muted); }
+.lpEmpty { padding: 16px 12px; text-align: center; color: var(--muted); font-size: 13px; }
 #input {
   width: 100%;
   border: 0;

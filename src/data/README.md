@@ -9,6 +9,7 @@
 | **한글 이름·별칭·줄임말** (기존 포켓몬/기술/도구/특성) | [`../../tools/overrides.json`](../../tools/overrides.json) | ✅ → `ko.js` 재생성 필요 |
 
 > `ko.js` 는 **자동 생성물이라 직접 고치지 말 것.** 기존 이름은 `overrides.json` 에서 고친다.
+> `learnsets.js`(포켓몬별 학습기·기술 정보)도 자동 생성물 — `node tools/build_learnsets.js` 로 재생성한다.
 
 ---
 
