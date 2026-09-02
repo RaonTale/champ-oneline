@@ -204,9 +204,10 @@ body {
 .lpSortBtn {
   border: 1px solid var(--line); background: transparent; color: var(--muted);
   font-family: inherit; font-size: 11px; font-weight: 600;
-  padding: 3px 9px; border-radius: 999px; cursor: pointer;
+  padding: 4px 10px; border-radius: 6px; cursor: pointer;
 }
 .lpSortBtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.lpCatBtn { min-width: 40px; } /* 분류 순환 필터 — 라벨(전체/물리/특수/변화) 폭 고정 */
 .lpRow { display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; }
 .lpRow:hover { background: var(--bg); }
 .lpName { flex: 1 1 auto; min-width: 0; font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

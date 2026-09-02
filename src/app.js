@@ -412,8 +412,9 @@
   // ── 특성/기술 목록 패널 ─────────────────────────────────────────────────────
   // 포켓몬 뒤에 "특성"/"기술" 을 치면 그 포켓몬의 특성/학습기 목록을 패널로 띄운다.
   const CAT_KO_SHORT = {Physical: '물리', Special: '특수', Status: '변화'};
-  const CAT_SORT = {Physical: 0, Special: 1, Status: 2};
-  let panelSort = 'type';   // 'type' | 'cat' | 'power'
+  const CAT_CYCLE = [null, 'Physical', 'Special', 'Status']; // 전체 → 물리 → 특수 → 변화 → 전체
+  let panelSort = 'type';   // 'type' | 'power'
+  let panelCat = null;      // null(전체) | 'Physical' | 'Special' | 'Status' — 분류 필터(정렬과 독립 유지)
   let curPanel = null;      // {kind:'ability'|'move', species}
 
   const koType = en => (window.KO.koName.type && window.KO.koName.type[en]) || en || '-';
@@ -444,24 +445,22 @@
       }
     } else {
       const info = window.MOVEINFO || {};
-      const moves = (baseLearnFor(species) || []).slice();
       const koMv = en => (window.KO.koName.move[en] || en);
+      let moves = (baseLearnFor(species) || []).slice();
+      if (panelCat) moves = moves.filter(en => (info[en] || {}).c === panelCat); // 분류 필터
       moves.sort((a, b) => {
         const ia = info[a] || {}, ib = info[b] || {};
         const byPow = (ib.p || 0) - (ia.p || 0);
         if (panelSort === 'power') return byPow || koMv(a).localeCompare(koMv(b));
-        if (panelSort === 'cat') {
-          const ca = CAT_SORT[ia.c] == null ? 3 : CAT_SORT[ia.c];
-          const cb = CAT_SORT[ib.c] == null ? 3 : CAT_SORT[ib.c];
-          return (ca - cb) || byPow;
-        }
-        return String(ia.t || '').localeCompare(String(ib.t || '')) || byPow;
+        return String(ia.t || '').localeCompare(String(ib.t || '')) || byPow; // 타입
       });
-      const btn = s => `<button type="button" class="lpSortBtn${panelSort === s ? ' on' : ''}" data-sort="${s}">` +
-        (s === 'type' ? '타입' : s === 'cat' ? '분류' : '위력') + '</button>';
+      // 분류(순환 필터) 를 맨 앞에 두고, 타입·위력은 정렬 토글.
+      const catBtn = `<button type="button" class="lpSortBtn lpCatBtn${panelCat ? ' on' : ''}" data-act="cat">` +
+        (panelCat ? CAT_KO_SHORT[panelCat] : '전체') + '</button>';
+      const sortBtn = (s, label) => `<button type="button" class="lpSortBtn${panelSort === s ? ' on' : ''}" data-act="sort" data-sort="${s}">${label}</button>`;
       html += `<div class="lpHead"><span class="lpTitle">기술 · ${esc(spKo)} <span class="lpCount">${moves.length}</span></span>` +
-        `<div class="lpSort">${btn('type')}${btn('cat')}${btn('power')}</div></div>`;
-      if (!moves.length) html += '<div class="lpEmpty">학습기 데이터가 없습니다</div>';
+        `<div class="lpSort">${catBtn}${sortBtn('type', '타입')}${sortBtn('power', '위력')}</div></div>`;
+      if (!moves.length) html += '<div class="lpEmpty">해당 기술이 없습니다</div>';
       for (const en of moves) {
         const i = info[en] || {};
         html += `<div class="lpRow lpMove" data-ins="${esc(koMv(en))}">` +
@@ -490,8 +489,17 @@
   }
 
   $suggest.addEventListener('mousedown', ev => {
-    const sortBtn = ev.target.closest('.lpSortBtn');
-    if (sortBtn) { ev.preventDefault(); panelSort = sortBtn.getAttribute('data-sort'); renderListPanel(); return; }
+    const ctrl = ev.target.closest('.lpSortBtn');
+    if (ctrl) {
+      ev.preventDefault();
+      if (ctrl.getAttribute('data-act') === 'cat') {
+        panelCat = CAT_CYCLE[(CAT_CYCLE.indexOf(panelCat) + 1) % CAT_CYCLE.length]; // 전체→물리→특수→변화
+      } else {
+        panelSort = ctrl.getAttribute('data-sort');
+      }
+      renderListPanel();
+      return;
+    }
     const lp = ev.target.closest('.lpRow');
     if (lp) { ev.preventDefault(); acceptPanel(lp.getAttribute('data-ins')); return; }
     const row = ev.target.closest('.sItemRow');
