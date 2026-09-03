@@ -429,6 +429,7 @@
       `<div class="dmStat"><span class="dmStatL">명중</span><span class="dmStatV">${acc == null ? '—' : acc}</span></div>`,
       `<div class="dmStat"><span class="dmStatL">PP</span><span class="dmStatV">${i.pp != null ? i.pp : '-'}</span></div>`,
       `<div class="dmStat"><span class="dmStatL">우선도</span><span class="dmStatV">${priority > 0 ? '+' + priority : priority}</span></div>`,
+      d.sec ? `<div class="dmStat"><span class="dmStatL">부가효과</span><span class="dmStatV">${d.sec}%</span></div>` : '',
     ].filter(Boolean).join('');
     const flavor = moveFlavor(en);
     return `<div class="dexCard">` +
