@@ -79,6 +79,18 @@
     const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r},${g},${b},${alpha})`;
   }
+  // 타입 배지 글씨색 — 배경(타입색) 밝기에 따라 검정/흰색 자동 선택(테마 무관 가독성).
+  function typeTextColor(hex) {
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? '#17181c' : '#ffffff';
+  }
+  // 타입색을 살짝 어둡게 → 배지 테두리(라이트·다크 양쪽에서 윤곽 정의).
+  function typeShade(hex, f) {
+    const r = Math.round(parseInt(hex.slice(1, 3), 16) * f);
+    const g = Math.round(parseInt(hex.slice(3, 5), 16) * f);
+    const b = Math.round(parseInt(hex.slice(5, 7), 16) * f);
+    return `rgb(${r},${g},${b})`;
+  }
 
   // ── 상단 토글 상태 ─────────────────────────────────────────────────────────
   const WEATHERS = [
@@ -485,9 +497,11 @@
       if (!moves.length) html += '<div class="lpEmpty">해당 기술이 없습니다</div>';
       for (const en of moves) {
         const i = info[en] || {};
+        const tHex = TYPE_COLOR[i.t] || '#888888';
+        const tStyle = `background:${tHex};color:${typeTextColor(tHex)};border-color:${typeShade(tHex, 0.72)}`;
         html += `<div class="lpRow lpMove" data-ins="${esc(koMv(en))}">` +
           `<span class="lpName">${esc(koMv(en))}</span>` +
-          `<span class="lpType">${esc(koType(i.t))}</span>` +
+          `<span class="lpType" style="${tStyle}">${esc(koType(i.t))}</span>` +
           `<span class="lpCat lpc-${i.c}">${CAT_KO_SHORT[i.c] || '-'}</span>` +
           `<span class="lpPow">${i.p ? i.p : '-'}</span></div>`;
       }
