@@ -7,6 +7,7 @@
   const $hint = document.getElementById('hint');
   const $chips = document.getElementById('chips');
   const $controls = document.getElementById('controls');
+  const $clear = document.getElementById('clearInput');
 
   // ── 라이트/다크 (설정 패널의 '다크 모드' 스위치로 전환) ────────────────────────
   function effectiveTheme() {
@@ -238,6 +239,7 @@
   function render() {
     $result.style.background = ''; // 이전 타입 배경 리셋 (데미지 결과에서만 다시 칠함)
     const text = $input.value;
+    if ($clear) $clear.hidden = !text;   // 텍스트 있을 때만 지우기 버튼
     if (!text.trim()) {
       $result.innerHTML = '<div class="placeholder">포켓몬과 기술을 입력하면 결과가 바로 나옵니다.</div>';
       $hint.textContent = '';
@@ -885,6 +887,12 @@
   buildSettings();
 
   $input.addEventListener('input', () => { render(); updateSuggest(); });
+
+  // 입력 지우기(X) 버튼
+  if ($clear) {
+    $clear.addEventListener('mousedown', ev => ev.preventDefault()); // 입력창 blur 방지
+    $clear.addEventListener('click', () => { $input.value = ''; hideSuggest(); render(); $input.focus(); });
+  }
 
   // 도감 카드의 '색이 다른' 토글 → 스프라이트 교체
   $result.addEventListener('change', ev => {

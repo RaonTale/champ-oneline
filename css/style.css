@@ -280,6 +280,21 @@ body {
 }
 #input::placeholder { color: var(--muted); opacity: .7; }
 
+.inputRow { display: flex; align-items: center; }
+.inputRow #input { flex: 1 1 auto; width: auto; min-width: 0; }
+.clearBtn {
+  flex: 0 0 auto;
+  width: 30px; height: 30px; margin-right: 6px;
+  border: 0; border-radius: 50%;
+  background: var(--bg); color: var(--muted);
+  font-size: 21px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: background .12s, color .12s;
+}
+.clearBtn:hover { background: var(--accent-soft); color: var(--accent); }
+.clearBtn:active { transform: scale(.92); }
+
 .hint {
   display: flex;
   flex-wrap: wrap;

@@ -41,8 +41,11 @@
     <div id="controls" class="controls"></div>
 
     <section class="inputCard">
-      <input id="input" type="text" autocomplete="off" spellcheck="false"
-             placeholder="예) a32+ 한카리아스 지진 vs h32 b32+ 더시마사리" />
+      <div class="inputRow">
+        <input id="input" type="text" autocomplete="off" spellcheck="false"
+               placeholder="예) a32+ 한카리아스 지진 vs h32 b32+ 더시마사리" />
+        <button id="clearInput" class="clearBtn" type="button" aria-label="입력 지우기" hidden>×</button>
+      </div>
       <div id="hint" class="hint"></div>
       <div id="suggest" class="suggest" role="listbox"></div>
     </section>
