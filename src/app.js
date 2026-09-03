@@ -520,6 +520,7 @@
         panelSort = ctrl.getAttribute('data-sort');
       }
       renderListPanel();
+      $input.blur();  // 모바일: 정렬만 눌렀는데 키보드가 다시 뜨지 않도록 포커스 해제(패널은 유지됨)
       return;
     }
     const lp = ev.target.closest('.lpRow');
@@ -540,7 +541,10 @@
 
   // 밖을 누르면 자동완성 숨김. 단, 입력창을 다시 누르면(포커스) 커서 위치 기준으로 이어서 보인다.
   let blurTimer = null;
-  $input.addEventListener('blur', () => { blurTimer = setTimeout(hideSuggest, 120); });
+  $input.addEventListener('blur', () => {
+    if (curPanel) return; // 특성/기술 목록 패널은 포커스와 무관하게 유지(모바일 키보드 내려도 안 닫힘)
+    blurTimer = setTimeout(hideSuggest, 120);
+  });
   $input.addEventListener('focus', () => {
     if (blurTimer) { clearTimeout(blurTimer); blurTimer = null; } // 재진입 시 예약된 숨김 취소
     // 클릭으로 재진입하면 focus 시점엔 커서가 아직 0이라, 커서가 옮겨진 뒤(다음 틱) 갱신한다.
@@ -551,6 +555,10 @@
   $input.addEventListener('click', () => { setTimeout(updateSuggest, 0); });
   $input.addEventListener('keyup', (e) => {
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') updateSuggest();
+  });
+  // 목록 패널은 blur로 안 닫히므로, 바깥을 누르면 닫아준다.
+  document.addEventListener('pointerdown', ev => {
+    if (curPanel && ev.target !== $input && !$suggest.contains(ev.target)) hideSuggest();
   });
 
   // ── 예시 칩 ────────────────────────────────────────────────────────────────
