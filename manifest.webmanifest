@@ -1,0 +1,17 @@
+{
+  "name": "챔피언스 한 줄 계산기",
+  "short_name": "챔피언스계산기",
+  "description": "포켓몬 챔피언스 전용 한 줄 데미지·결정력·내구 계산기",
+  "lang": "ko",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14161a",
+  "theme_color": "#d33d3d",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

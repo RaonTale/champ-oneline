@@ -19,6 +19,12 @@
   <meta name="twitter:description" content="한 줄 입력으로 데미지·결정력·내구력 계산." />
 
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <!-- PWA: 홈 화면 설치 · 오프라인 -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="챔피언스계산기" />
   <!-- 저장된 테마를 렌더 전에 적용해 깜빡임 방지 -->
   <script>
     try { var t = localStorage.getItem('champcalc-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
@@ -115,5 +121,14 @@
   <script src="src/engine.js"></script>
   <script src="src/describe.js"></script>
   <script src="src/app.js"></script>
+
+  <!-- 서비스워커 등록 (오프라인 지원) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>
