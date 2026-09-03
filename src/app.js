@@ -334,17 +334,6 @@
     const hex = TYPE_COLOR[enType] || '#888888';
     return `<span class="typeBadge" style="background:${hex};color:${typeTextColor(hex)};border-color:${typeShade(hex, 0.72)}">${esc(koType(enType))}</span>`;
   }
-  function abilityOwners(abEn) {
-    const roster = (window.KO && window.KO.speciesAbilities) || {};
-    const koP = (window.KO.koName && window.KO.koName.pokemon) || {};
-    const out = [];
-    for (const sp in roster) {
-      for (const a of roster[sp]) if (a.en === abEn) { out.push({ko: koP[sp] || sp, rate: a.rate}); break; }
-    }
-    out.sort((x, y) => (y.rate || 0) - (x.rate || 0));
-    return out;
-  }
-
   // 이름만 입력하면 카드. 포켓몬 > 기술 > 특성 순.
   function infoQuery(text) {
     const t = (text || '').trim();
@@ -452,14 +441,11 @@
   function abilCardHTML(en) {
     const ko = abilityKo(en);
     const flavor = abilityFlavor(en);
-    const owners = abilityOwners(en);
-    const rows = owners.map(o =>
-      `<div class="daOwnerRow"><span>${esc(o.ko)}</span>${o.rate > 0 ? `<span class="lpRate">${o.rate}%</span>` : ''}</div>`).join('');
     return `<div class="dexCard">` +
       `<div class="daHead"><span class="dmName">${esc(ko)}</span><span class="daEn">${esc(en)}</span></div>` +
-      (flavor ? `<div class="dmFlavor">${esc(flavor)}</div>` : '') +
-      `<div class="dpSection" style="margin-top:14px">이 특성을 가진 포켓몬 <span class="daCount">${owners.length}</span></div>` +
-      (owners.length ? `<div class="daOwners">${rows}</div>` : '') +
+      (flavor
+        ? `<div class="dmFlavor">${esc(flavor)}</div>`
+        : `<div class="dmFlavor" style="color:var(--muted)">설명이 아직 없습니다.</div>`) +
       `</div>`;
   }
 
