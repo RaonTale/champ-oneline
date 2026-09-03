@@ -68,33 +68,11 @@ body {
   padding: 32px 20px 64px;
 }
 
-/* 라이트/다크 전환 버튼 (우측 상단) */
-.themeToggle {
-  position: absolute;
-  top: 26px;
-  right: 20px;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: var(--card);
-  box-shadow: var(--shadow);
-  cursor: pointer;
-  font-size: 18px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color .12s, transform .05s;
-}
-.themeToggle:hover { border-color: var(--accent); }
-.themeToggle:active { transform: scale(.94); }
-
-/* 설정(톱니바퀴) 버튼 — 테마 버튼 왼쪽 */
+/* 설정(톱니바퀴) 버튼 — 우측 상단 단독 */
 .settingsToggle {
   position: absolute;
   top: 26px;
-  right: 68px;
+  right: 20px;
   width: 40px;
   height: 40px;
   border: 1px solid var(--line);
@@ -134,6 +112,7 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .spRow:hover { background: var(--bg); }
+.spDivider { height: 1px; background: var(--line); margin: 6px 6px; }
 .switch {
   appearance: none; -webkit-appearance: none;
   flex: 0 0 auto; width: 40px; height: 23px;
@@ -517,11 +496,9 @@ body {
   .wrap { padding: 20px 14px 48px; }
   .main { font-size: 24px; }
   #input { font-size: 16px; }
-  /* 우측 상단 버튼 2개가 제목과 겹치지 않게 */
-  .head { padding: 0 50px; }
-  .head h1 { font-size: 22px; }
-  .settingsToggle, .themeToggle { width: 36px; height: 36px; font-size: 16px; top: 20px; }
-  .themeToggle { right: 14px; }
-  .settingsToggle { right: 56px; }
+  /* 우측 상단 톱니바퀴가 제목과 겹치지 않게 */
+  .head { padding: 0 46px; }
+  .head h1 { font-size: 23px; }
+  .settingsToggle { width: 36px; height: 36px; font-size: 16px; top: 20px; right: 14px; }
   .settingsPanel { top: 62px; right: 14px; }
 }

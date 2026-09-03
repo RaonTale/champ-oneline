@@ -7,26 +7,17 @@
   const $hint = document.getElementById('hint');
   const $chips = document.getElementById('chips');
   const $controls = document.getElementById('controls');
-  const $theme = document.getElementById('themeToggle');
 
-  // ── 라이트/다크 전환 ───────────────────────────────────────────────────────
+  // ── 라이트/다크 (설정 패널의 '다크 모드' 스위치로 전환) ────────────────────────
   function effectiveTheme() {
     const set = document.documentElement.getAttribute('data-theme');
     if (set === 'dark' || set === 'light') return set;
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
-  function updateThemeBtn() {
-    const dark = effectiveTheme() === 'dark';
-    $theme.textContent = dark ? '☀️' : '🌙';
-    $theme.title = dark ? '라이트 모드로' : '다크 모드로';
-  }
-  $theme.addEventListener('click', () => {
-    const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+  function setTheme(next) {
     document.documentElement.setAttribute('data-theme', next);
     try { localStorage.setItem('champcalc-theme', next); } catch (e) {}
-    updateThemeBtn();
-  });
-  updateThemeBtn();
+  }
 
   // 예시 풀(전부 오류·미인식 없이 실제 데미지가 나오는 것만). 매 접속 때 랜덤 3개만 보인다.
   const EXAMPLE_POOL = [
@@ -668,6 +659,21 @@
       row.appendChild(chk);
       panel.appendChild(row);
     }
+    // 테마 (구분선 + 다크 모드 스위치)
+    panel.appendChild(Object.assign(document.createElement('div'), {className: 'spDivider'}));
+    const tRow = document.createElement('label');
+    tRow.className = 'spRow';
+    const tSpan = document.createElement('span');
+    tSpan.textContent = '다크 모드';
+    const tChk = document.createElement('input');
+    tChk.type = 'checkbox';
+    tChk.className = 'switch';
+    tChk.checked = effectiveTheme() === 'dark';
+    tChk.addEventListener('change', () => setTheme(tChk.checked ? 'dark' : 'light'));
+    tRow.appendChild(tSpan);
+    tRow.appendChild(tChk);
+    panel.appendChild(tRow);
+
     $wrap.appendChild(panel);
     const setOpen = open => {
       panel.hidden = !open;
