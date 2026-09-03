@@ -489,8 +489,7 @@
           `<span class="lpName">${esc(koMv(en))}</span>` +
           `<span class="lpType">${esc(koType(i.t))}</span>` +
           `<span class="lpCat lpc-${i.c}">${CAT_KO_SHORT[i.c] || '-'}</span>` +
-          `<span class="lpPow">${i.p ? i.p : '-'}</span>` +
-          `<span class="lpPp">${i.pp != null ? i.pp : '-'}</span></div>`;
+          `<span class="lpPow">${i.p ? i.p : '-'}</span></div>`;
       }
     }
     $suggest.innerHTML = html;
