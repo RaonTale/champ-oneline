@@ -767,6 +767,20 @@
     $input.setSelectionRange(caret, caret);
     render(); updateSuggest();
   }
+  // 성격 +/- : 앞이 "a32 "(능력치+자동공백)면 공백을 먹고 붙여 "a32+" 가 되게 한다.
+  function insertNature(sign) {
+    let start = $input.selectionStart, end = $input.selectionEnd;
+    if (start == null) { start = end = $input.value.length; }
+    let before = $input.value.slice(0, start);
+    const after = $input.value.slice(end);
+    const m = before.match(/(\S+)\s$/);          // 커서 앞이 "토큰 " 형태?
+    if (m && /[a-zA-Z가-힣].*\d$/.test(m[1])) before = before.slice(0, -1); // 능력치(문자+숫자)면 공백 제거
+    $input.value = before + sign + after;
+    const caret = before.length + sign.length;
+    $input.focus();
+    $input.setSelectionRange(caret, caret);
+    render(); updateSuggest();
+  }
   const $quickbar = document.getElementById('quickbar');
   if ($quickbar) {
     const mkBtn = (label, cls, onClick) => {
@@ -781,14 +795,16 @@
     const statRow = document.createElement('div');
     statRow.className = 'qrow';
     for (const s of STATS) {
-      // 능력치는 앞과 분리, 뒤엔 공백 없이 → 바로 +/- 로 성격 보정 가능
-      statRow.appendChild(mkBtn(s.t, 'qkey qstat', () => insertToken(s.ins, {lead: true})));
+      // 능력치는 앞뒤 공백(자동 스페이스). 뒤 +/- 는 insertNature 가 공백을 먹고 붙인다.
+      statRow.appendChild(mkBtn(s.t, 'qkey qstat', () => insertToken(s.ins, {lead: true, trail: true})));
     }
     const modRow = document.createElement('div');
     modRow.className = 'qrow';
     for (const m of MODS) {
-      const opts = m.word ? {lead: true, trail: true} : {};
-      modRow.appendChild(mkBtn(m.t, 'qkey', () => insertToken(m.t, opts)));
+      const onClick = (m.t === '+' || m.t === '-')
+        ? () => insertNature(m.t)
+        : () => insertToken(m.t, m.word ? {lead: true, trail: true} : {});
+      modRow.appendChild(mkBtn(m.t, 'qkey', onClick));
     }
     $quickbar.appendChild(statRow);
     $quickbar.appendChild(modRow);
