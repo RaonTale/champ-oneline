@@ -426,20 +426,25 @@ body {
 /* 모바일 전용 빠른입력 바 — 키보드 전환 없이 자주 쓰는 토큰을 원탭으로 */
 .quickbar { display: none; }
 @media (max-width: 640px) {
-  .quickbar { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+  .quickbar { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+  .qrow { display: flex; gap: 7px; }
   .qkey {
-    flex: 1 1 0; min-width: 42px;
-    padding: 11px 6px;
+    flex: 1 1 0; min-width: 0;
+    min-height: 46px;
+    padding: 10px 4px;
     background: var(--card);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: 11px;
     color: var(--ink);
-    font-size: 16px; font-weight: 600;
+    font-size: 15px; font-weight: 600;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    transition: background .08s, border-color .08s, color .08s;
   }
-  .qkey:active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  /* 능력치 버튼은 살짝 강조 */
+  .qkey.qstat { font-weight: 700; background: var(--accent-soft); border-color: transparent; }
+  .qkey:active { background: var(--accent); border-color: var(--accent); color: #fff; }
 }
 
 @media (max-width: 480px) {

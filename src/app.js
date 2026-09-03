@@ -573,21 +573,24 @@
   }
 
   // ── 모바일 빠른입력 바 ──────────────────────────────────────────────────────
-  // word:true 는 독립 토큰(앞뒤 공백), 아니면 지금 단어 뒤에 그대로 붙인다.
-  const QUICK = [
-    {t: 'vs', word: true}, {t: '+'}, {t: '-'}, {t: '%'}, {t: '32'},
-    {t: '급소', word: true},
+  // 능력치 줄: 탭하면 h32·a32… (32=능력포인트 최대) 를 넣고, 뒤에 +/- 로 성격 보정.
+  // 보조 줄: vs·급소 는 독립 토큰(앞뒤 공백), +/-/% 는 앞 토큰에 그대로 붙는다.
+  const STATS = [
+    {t: '체력', ins: 'h32'}, {t: '공격', ins: 'a32'}, {t: '방어', ins: 'b32'},
+    {t: '특공', ins: 'c32'}, {t: '특방', ins: 'd32'},
   ];
-  function insertQuick(text, word) {
+  const MODS = [
+    {t: '+'}, {t: '-'}, {t: 'vs', word: true}, {t: '급소', word: true}, {t: '%'},
+  ];
+  // lead: 앞 토큰과 공백으로 분리 · trail: 뒤에 공백 추가
+  function insertToken(text, {lead = false, trail = false} = {}) {
     let start = $input.selectionStart, end = $input.selectionEnd;
     if (start == null) { start = end = $input.value.length; }
     const before = $input.value.slice(0, start);
     const after = $input.value.slice(end);
     let ins = text;
-    if (word) {
-      if (before && !/\s$/.test(before)) ins = ' ' + ins;  // 앞 단어와 붙지 않게
-      if (!after || !/^\s/.test(after)) ins = ins + ' ';   // 뒤에 공백 없을 때만 (이중 공백 방지)
-    }
+    if (lead && before && !/\s$/.test(before)) ins = ' ' + ins;   // 앞 단어와 붙지 않게
+    if (trail && (!after || !/^\s/.test(after))) ins = ins + ' '; // 이중 공백 방지
     $input.value = before + ins + after;
     const caret = before.length + ins.length;
     $input.focus();
@@ -596,15 +599,29 @@
   }
   const $quickbar = document.getElementById('quickbar');
   if ($quickbar) {
-    for (const k of QUICK) {
+    const mkBtn = (label, cls, onClick) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'qkey';
-      b.textContent = k.t;
+      b.className = cls;
+      b.textContent = label;
       b.addEventListener('mousedown', ev => ev.preventDefault()); // 입력창 blur 방지
-      b.addEventListener('click', () => insertQuick(k.t, !!k.word));
-      $quickbar.appendChild(b);
+      b.addEventListener('click', onClick);
+      return b;
+    };
+    const statRow = document.createElement('div');
+    statRow.className = 'qrow';
+    for (const s of STATS) {
+      // 능력치는 앞과 분리, 뒤엔 공백 없이 → 바로 +/- 로 성격 보정 가능
+      statRow.appendChild(mkBtn(s.t, 'qkey qstat', () => insertToken(s.ins, {lead: true})));
     }
+    const modRow = document.createElement('div');
+    modRow.className = 'qrow';
+    for (const m of MODS) {
+      const opts = m.word ? {lead: true, trail: true} : {};
+      modRow.appendChild(mkBtn(m.t, 'qkey', () => insertToken(m.t, opts)));
+    }
+    $quickbar.appendChild(statRow);
+    $quickbar.appendChild(modRow);
   }
 
   buildControls();
