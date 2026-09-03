@@ -2,6 +2,7 @@
   --bg: #f4f5f8;
   --card: #ffffff;
   --ink: #1a1c22;
+  --ink2: #3f4650;        /* 2차 텍스트 — 회색(muted)보다 진해 가독성↑ */
   --muted: #6b7280;
   --line: #e4e6eb;
   --accent: #d33d3d;      /* 챔피언스 레드 */
@@ -20,6 +21,7 @@
   --bg: #14161a;
   --card: #1e2127;
   --ink: #e8eaed;
+  --ink2: #c4cad3;
   --muted: #9aa0aa;
   --line: #2c303a;
   --accent: #ff5a5a;
@@ -324,7 +326,8 @@ body {
 
 .matchup {
   font-size: 15px;
-  color: var(--muted);
+  color: var(--ink2);
+  font-weight: 500;
   margin-bottom: 10px;
   word-break: keep-all;
 }
@@ -340,7 +343,9 @@ body {
 .main {
   font-size: 28px;
   font-weight: 800;
+  line-height: 1.2;
   letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
   word-break: keep-all;
 }
 /* 상성 배지 (효과 굉장함 ×2 등) — 색은 인라인으로 지정 */
@@ -495,11 +500,26 @@ body {
 
 @media (max-width: 480px) {
   .wrap { padding: 20px 14px 48px; }
-  .main { font-size: 24px; }
-  #input { font-size: 16px; }
   /* 우측 상단 톱니바퀴가 제목과 겹치지 않게 */
-  .head { padding: 0 46px; }
+  .head { padding: 0 46px; margin-bottom: 22px; }
   .head h1 { font-size: 23px; }
   .settingsToggle { width: 36px; height: 36px; font-size: 16px; top: 20px; right: 14px; }
   .settingsPanel { top: 62px; right: 14px; }
+
+  /* 입력창 — 크게(가독성 · iOS 확대 방지) */
+  #input { font-size: 17px; padding: 15px 12px; }
+
+  /* 상단 날씨/필드/벽 토글 — 터치·가독성 */
+  .segBtn { font-size: 13.5px; padding: 7px 13px; }
+
+  /* 결과 카드 — 핵심(데미지 수치·확정 n타)을 크게, 부가정보는 정돈 */
+  .result { padding: 20px 18px; }
+  .matchup { font-size: 14.5px; margin-bottom: 8px; }
+  .dmgIndex { font-size: 12.5px; }
+  .main { font-size: 26px; }
+  .effBadge { font-size: 13.5px; }
+  .verdict { font-size: 18px; margin-top: 10px; letter-spacing: -.01em; }
+  .dmgBar { height: 26px; border-radius: 8px; }   /* 바 키워 라벨 잘 보이게 */
+  .dmgBarTxt { font-size: 13px; }
+  .sub { font-size: 13px; }
 }
