@@ -146,8 +146,6 @@ body {
   letter-spacing: -.02em;
 }
 .head h1 .hl { color: var(--accent); }
-.subtitle { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
-.subtitle b { color: var(--accent); }
 
 /* 상단 토글 (날씨 / 벽) */
 .controls {
