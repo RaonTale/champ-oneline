@@ -111,7 +111,7 @@
   function buildControls() {
     // 날씨 (단일 선택 · 같은 걸 다시 누르면 꺼짐)
     const wGroup = document.createElement('div');
-    wGroup.className = 'ctrlGroup';
+    wGroup.className = 'ctrlGroup gWeather';
     wGroup.innerHTML = '<span class="ctrlLabel">날씨</span>';
     const seg = document.createElement('div');
     seg.className = 'seg';
@@ -131,7 +131,7 @@
 
     // 필드 (단일 선택 · 같은 걸 다시 누르면 꺼짐)
     const tGroup = document.createElement('div');
-    tGroup.className = 'ctrlGroup';
+    tGroup.className = 'ctrlGroup gField';
     tGroup.innerHTML = '<span class="ctrlLabel">필드</span>';
     const tseg = document.createElement('div');
     tseg.className = 'seg';
@@ -151,7 +151,7 @@
 
     // 벽 (독립 토글)
     const sGroup = document.createElement('div');
-    sGroup.className = 'ctrlGroup';
+    sGroup.className = 'ctrlGroup gWall';
     sGroup.innerHTML = '<span class="ctrlLabel">벽</span>';
     const screens = document.createElement('div');
     screens.className = 'seg';
@@ -625,6 +625,64 @@
   }
 
   buildControls();
+
+  // ── 표시 설정 (톱니바퀴) — 날씨/필드/벽/단축키/예시 on·off (PC·모바일 공통) ──────
+  const SETTINGS_DEFS = [
+    {key: 'weather', label: '날씨'},
+    {key: 'field', label: '필드'},
+    {key: 'wall', label: '벽'},
+    {key: 'quick', label: '단축키'},
+    {key: 'examples', label: '예시'},
+  ];
+  const showSettings = {weather: true, field: true, wall: true, quick: true, examples: true};
+  try {
+    const raw = localStorage.getItem('champcalc-show');
+    if (raw) Object.assign(showSettings, JSON.parse(raw));
+  } catch (e) {}
+  const $wrap = document.querySelector('.wrap');
+  function applySettings() {
+    for (const {key} of SETTINGS_DEFS) $wrap.classList.toggle('off-' + key, !showSettings[key]);
+  }
+  function buildSettings() {
+    const $btn = document.getElementById('settingsToggle');
+    if (!$btn || !$wrap) return;
+    const panel = document.createElement('div');
+    panel.className = 'settingsPanel';
+    panel.hidden = true;
+    panel.innerHTML = '<div class="spTitle">표시 설정</div>';
+    for (const {key, label} of SETTINGS_DEFS) {
+      const row = document.createElement('label');
+      row.className = 'spRow';
+      const span = document.createElement('span');
+      span.textContent = label;
+      const chk = document.createElement('input');
+      chk.type = 'checkbox';
+      chk.className = 'switch';
+      chk.checked = !!showSettings[key];
+      chk.addEventListener('change', () => {
+        showSettings[key] = chk.checked;
+        try { localStorage.setItem('champcalc-show', JSON.stringify(showSettings)); } catch (e) {}
+        applySettings();
+      });
+      row.appendChild(span);
+      row.appendChild(chk);
+      panel.appendChild(row);
+    }
+    $wrap.appendChild(panel);
+    const setOpen = open => {
+      panel.hidden = !open;
+      $btn.classList.toggle('on', open);
+      $btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    $btn.addEventListener('click', ev => { ev.stopPropagation(); setOpen(panel.hidden); });
+    panel.addEventListener('click', ev => ev.stopPropagation()); // 패널 내부 클릭은 닫지 않음
+    document.addEventListener('click', ev => {
+      if (!panel.hidden && ev.target !== $btn) setOpen(false);
+    });
+  }
+  applySettings();
+  buildSettings();
+
   $input.addEventListener('input', () => { render(); updateSuggest(); });
 
   render();

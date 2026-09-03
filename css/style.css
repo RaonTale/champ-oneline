@@ -90,6 +90,73 @@ body {
 .themeToggle:hover { border-color: var(--accent); }
 .themeToggle:active { transform: scale(.94); }
 
+/* 설정(톱니바퀴) 버튼 — 테마 버튼 왼쪽 */
+.settingsToggle {
+  position: absolute;
+  top: 26px;
+  right: 68px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .12s, transform .05s;
+}
+.settingsToggle:hover { border-color: var(--accent); }
+.settingsToggle:active { transform: scale(.94); }
+.settingsToggle.on { border-color: var(--accent); color: var(--accent); }
+
+/* 설정 패널 */
+.settingsPanel {
+  position: absolute;
+  top: 74px;
+  right: 20px;
+  z-index: 40;
+  width: 210px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 8px;
+}
+.spTitle { font-size: 12px; font-weight: 700; color: var(--muted); padding: 6px 8px 8px; }
+.spRow {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 8px; border-radius: 9px; cursor: pointer;
+  font-size: 14.5px; font-weight: 600; color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+.spRow:hover { background: var(--bg); }
+.switch {
+  appearance: none; -webkit-appearance: none;
+  flex: 0 0 auto; width: 40px; height: 23px;
+  border-radius: 999px; background: var(--line);
+  position: relative; cursor: pointer; transition: background .15s;
+}
+.switch:checked { background: var(--accent); }
+.switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 19px; height: 19px; border-radius: 50%;
+  background: #fff; transition: transform .15s;
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
+}
+.switch:checked::after { transform: translateX(17px); }
+
+/* 설정으로 끈 영역 숨김 */
+.wrap.off-weather .gWeather,
+.wrap.off-field .gField,
+.wrap.off-wall .gWall,
+.wrap.off-quick .quickbar,
+.wrap.off-examples .examples { display: none; }
+.wrap.off-weather.off-field.off-wall .controls { display: none; }
+
 .head { text-align: center; margin-bottom: 26px; }
 .head h1 {
   margin: 0;
@@ -423,32 +490,38 @@ body {
 .foot a { color: var(--muted); }
 .foot a:hover { color: var(--accent); }
 
-/* 모바일 전용 빠른입력 바 — 키보드 전환 없이 자주 쓰는 토큰을 원탭으로 */
-.quickbar { display: none; }
-@media (max-width: 640px) {
-  .quickbar { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
-  .qrow { display: flex; gap: 7px; }
-  .qkey {
-    flex: 1 1 0; min-width: 0;
-    min-height: 46px;
-    padding: 10px 4px;
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 11px;
-    color: var(--ink);
-    font-size: 15px; font-weight: 600;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
-    transition: background .08s, border-color .08s, color .08s;
-  }
-  /* 능력치 버튼은 살짝 강조 */
-  .qkey.qstat { font-weight: 700; background: var(--accent-soft); border-color: transparent; }
-  .qkey:active { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* 빠른입력 바 — 키보드 없이 자주 쓰는 토큰을 원탭으로 (설정에서 on/off) */
+.quickbar { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+.qrow { display: flex; gap: 7px; }
+.qkey {
+  flex: 1 1 0; min-width: 0;
+  min-height: 44px;
+  padding: 10px 4px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px; font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background .08s, border-color .08s, color .08s;
 }
+/* 능력치 버튼은 살짝 강조 */
+.qkey.qstat { font-weight: 700; background: var(--accent-soft); border-color: transparent; }
+.qkey:hover { border-color: var(--accent); }
+.qkey:active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
 @media (max-width: 480px) {
   .wrap { padding: 20px 14px 48px; }
   .main { font-size: 24px; }
   #input { font-size: 16px; }
+  /* 우측 상단 버튼 2개가 제목과 겹치지 않게 */
+  .head { padding: 0 50px; }
+  .head h1 { font-size: 22px; }
+  .settingsToggle, .themeToggle { width: 36px; height: 36px; font-size: 16px; top: 20px; }
+  .themeToggle { right: 14px; }
+  .settingsToggle { right: 56px; }
+  .settingsPanel { top: 62px; right: 14px; }
 }
