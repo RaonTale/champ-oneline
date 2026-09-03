@@ -245,6 +245,10 @@
       return;
     }
 
+    // 이름만 입력하면 도감 카드(포켓몬/기술/특성).
+    const info = infoQuery(text);
+    if (info) { renderDexCard(info); return; }
+
     let spec;
     try {
       spec = window.CC.parse(text);
@@ -299,6 +303,173 @@
     const bits = [];
     for (const n of spec.notes || []) bits.push(`<span class="note">${esc(n)}</span>`);
     $hint.innerHTML = bits.join('');
+  }
+
+  // ── 도감 카드 (이름만 입력하면 그 포켓몬/기술/특성 카드) ──────────────────────
+  const STAT_KO = ['HP', '공격', '방어', '특공', '특방', '스피드'];
+  const capType = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+  const SPRITE_URL = (pid, shiny) =>
+    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${shiny ? 'shiny/' : ''}${pid}.png`;
+  const abilityKo = en => (window.KO.koName.ability && window.KO.koName.ability[en]) || en;
+  function abilityFlavor(en) {
+    const ko = abilityKo(en);
+    const notes = window.CHAMP && window.CHAMP.abilityNotes;
+    return (notes && notes[ko]) || (window.DEX && window.DEX.ability && window.DEX.ability[en]) || '';
+  }
+  function moveFlavor(en) {
+    const ko = (window.KO.koName.move && window.KO.koName.move[en]) || en;
+    const notes = window.CHAMP && window.CHAMP.moveNotes;
+    if (notes && notes[ko]) return notes[ko];
+    const d = (window.DEX && window.DEX.move && window.DEX.move[en]) || {};
+    return d.flavor || '';
+  }
+  function genderStr(rate) {
+    if (rate == null || rate < 0) return '무성';
+    const f = rate / 8 * 100, m = 100 - f;
+    if (f === 0) return '♂ 100%';
+    if (f === 100) return '♀ 100%';
+    return `♂ ${m}% · ♀ ${f}%`;
+  }
+  function typeBadge(enType) {
+    const hex = TYPE_COLOR[enType] || '#888888';
+    return `<span class="typeBadge" style="background:${hex};color:${typeTextColor(hex)};border-color:${typeShade(hex, 0.72)}">${esc(koType(enType))}</span>`;
+  }
+  function abilityOwners(abEn) {
+    const roster = (window.KO && window.KO.speciesAbilities) || {};
+    const koP = (window.KO.koName && window.KO.koName.pokemon) || {};
+    const out = [];
+    for (const sp in roster) {
+      for (const a of roster[sp]) if (a.en === abEn) { out.push({ko: koP[sp] || sp, rate: a.rate}); break; }
+    }
+    out.sort((x, y) => (y.rate || 0) - (x.rate || 0));
+    return out;
+  }
+
+  // 이름만 입력하면 카드. 포켓몬 > 기술 > 특성 순.
+  function infoQuery(text) {
+    const t = (text || '').trim();
+    if (!t) return null;
+    const key = normKo(t);
+    const K = window.KO || {};
+    const pk = K.pokemon && K.pokemon[key];
+    if (pk && cardPokemon(pk)) return {kind: 'pokemon', en: pk};
+    const mv = K.move && K.move[key];
+    if (mv && (window.MOVEINFO || {})[mv]) return {kind: 'move', en: mv};
+    const ab = K.ability && K.ability[key];
+    if (ab) return {kind: 'ability', en: ab};
+    return null;
+  }
+
+  // 카드 데이터 = dex.js(대량) ⊕ speciesOverrides(신규·수정, 계산기와 공유).
+  function cardPokemon(en) {
+    const base = (window.DEX && window.DEX.pokemon && window.DEX.pokemon[en]) || null;
+    const ov = (window.CHAMP && window.CHAMP.speciesOverrides && window.CHAMP.speciesOverrides[en]) || null;
+    if (!base && !ov) return null;
+    const pick = (o, b, d) => (o != null && o !== '' ? o : (b != null && b !== '' ? b : d));
+    const statsOv = ov && ov.baseStats ? [ov.baseStats.hp, ov.baseStats.atk, ov.baseStats.def, ov.baseStats.spa, ov.baseStats.spd, ov.baseStats.spe] : null;
+    let abilities;
+    if (ov && ov.abilities && ov.abilities.length) {
+      abilities = ov.abilities.map(aen => ({en: aen, ko: abilityKo(aen), flavor: abilityFlavor(aen), hidden: false}));
+    } else if (base && base.abilities) {
+      abilities = base.abilities.map(a => ({
+        en: a.en, ko: a.ko, hidden: a.hidden,
+        flavor: (window.CHAMP.abilityNotes && window.CHAMP.abilityNotes[a.ko]) || a.flavor ||
+          (a.en && window.DEX.ability && window.DEX.ability[a.en]) || '',
+      }));
+    } else abilities = [];
+    return {
+      en,
+      ko: pick(ov && ov.ko, base && base.ko, en),
+      ja: pick(ov && ov.ja, base && base.ja, ''),
+      genus: pick(ov && ov.genus, base && base.genus, ''),
+      gender: (ov && ov.gender != null) ? ov.gender : (base ? base.gender : -1),
+      flavor: pick(ov && ov.flavor, base && base.flavor, ''),
+      pid: (ov && ov.pid != null) ? ov.pid : (base ? base.pid : null),
+      types: (ov && ov.types) ? ov.types.map(t => String(t).toLowerCase()) : (base ? base.types : []),
+      stats: statsOv || (base ? base.stats : [0, 0, 0, 0, 0, 0]),
+      height: (ov && ov.heightm != null) ? Math.round(ov.heightm * 10) : (base ? base.height : null),
+      weight: (ov && ov.weightkg != null) ? Math.round(ov.weightkg * 10) : (base ? base.weight : null),
+      abilities,
+    };
+  }
+
+  function pokeCardHTML(en) {
+    const p = cardPokemon(en);
+    const typesHtml = p.types.map(t => typeBadge(capType(t))).join('');
+    const sprite = p.pid != null
+      ? `<div class="dpSpriteWrap"><img class="dpSprite" data-pid="${p.pid}" src="${SPRITE_URL(p.pid, false)}" alt="${esc(p.ko)}" loading="lazy" onerror="this.style.visibility='hidden'"></div>`
+      : '';
+    const meta = [
+      p.height != null ? `키 <b>${p.height / 10}</b> m` : '',
+      p.weight != null ? `무게 <b>${p.weight / 10}</b> kg` : '',
+      `성별 <b>${genderStr(p.gender)}</b>`,
+    ].filter(Boolean).join('<span class="dpDot">·</span>');
+    const total = p.stats.reduce((a, b) => a + b, 0);
+    const statCells = STAT_KO.map((lab, i) =>
+      `<div class="dpStat"><span class="dpStatL">${lab}</span><span class="dpStatV">${p.stats[i]}</span></div>`).join('') +
+      `<div class="dpStat dpTotal"><span class="dpStatL">합계</span><span class="dpStatV">${total}</span></div>`;
+    const abilHtml = p.abilities.map(a =>
+      `<div class="dpAbil"><div class="dpAbilName">${esc(a.ko)}${a.hidden ? '<span class="dpHidden">숨은특성</span>' : ''}</div>` +
+      (a.flavor ? `<div class="dpAbilDesc">${esc(a.flavor)}</div>` : '') + `</div>`).join('');
+    const subline = [p.en, p.ja].filter(Boolean).join(' · ');
+    return `<div class="dexCard">` +
+      `<div class="dpTop">${sprite}<div class="dpId">` +
+        `<div class="dpKo">${esc(p.ko)}${p.genus ? `<span class="dpGenus">${esc(p.genus)}</span>` : ''}</div>` +
+        `<div class="dpEn">${esc(subline)}</div>` +
+        `<div class="dpTypes">${typesHtml}</div></div>` +
+        (p.pid != null ? `<label class="dpShiny"><input type="checkbox" class="dpShinyChk"><span>색이 다른</span></label>` : '') +
+      `</div>` +
+      `<div class="dpMeta">${meta}</div>` +
+      `<div class="dpStats">${statCells}</div>` +
+      (p.abilities.length ? `<div class="dpAbilBlock"><div class="dpSection">특성</div>${abilHtml}</div>` : '') +
+      (p.flavor ? `<div class="dpFlavor">${esc(p.flavor)}</div>` : '') +
+      `</div>`;
+  }
+
+  function moveCardHTML(en) {
+    const i = (window.MOVEINFO || {})[en] || {};
+    const d = (window.DEX && window.DEX.move && window.DEX.move[en]) || {};
+    const koMv = (window.KO.koName.move && window.KO.koName.move[en]) || en;
+    let priority = 0, acc = d.acc;
+    try {
+      const m = window.calc.Generations.get(0).moves.get(window.calc.toID(en));
+      if (m) { priority = m.priority || 0; if (acc == null) acc = (m.accuracy === true ? null : m.accuracy); }
+    } catch (e) { /* 무시 */ }
+    const cells = [
+      i.c !== 'Status' ? `<div class="dmStat"><span class="dmStatL">위력</span><span class="dmStatV">${i.p ? i.p : '-'}</span></div>` : '',
+      `<div class="dmStat"><span class="dmStatL">명중</span><span class="dmStatV">${acc == null ? '—' : acc}</span></div>`,
+      `<div class="dmStat"><span class="dmStatL">PP</span><span class="dmStatV">${i.pp != null ? i.pp : '-'}</span></div>`,
+      `<div class="dmStat"><span class="dmStatL">우선도</span><span class="dmStatV">${priority > 0 ? '+' + priority : priority}</span></div>`,
+    ].filter(Boolean).join('');
+    const flavor = moveFlavor(en);
+    return `<div class="dexCard">` +
+      `<div class="dmHead"><span class="dmName">${esc(koMv)}</span>${typeBadge(i.t)}<span class="dmCat">/ ${CAT_KO_SHORT[i.c] || '-'}</span></div>` +
+      `<div class="dmStats">${cells}</div>` +
+      (flavor ? `<div class="dmFlavor">${esc(flavor)}</div>` : '') +
+      `</div>`;
+  }
+
+  function abilCardHTML(en) {
+    const ko = abilityKo(en);
+    const flavor = abilityFlavor(en);
+    const owners = abilityOwners(en);
+    const rows = owners.map(o =>
+      `<div class="daOwnerRow"><span>${esc(o.ko)}</span>${o.rate > 0 ? `<span class="lpRate">${o.rate}%</span>` : ''}</div>`).join('');
+    return `<div class="dexCard">` +
+      `<div class="daHead"><span class="dmName">${esc(ko)}</span><span class="daEn">${esc(en)}</span></div>` +
+      (flavor ? `<div class="dmFlavor">${esc(flavor)}</div>` : '') +
+      `<div class="dpSection" style="margin-top:14px">이 특성을 가진 포켓몬 <span class="daCount">${owners.length}</span></div>` +
+      (owners.length ? `<div class="daOwners">${rows}</div>` : '') +
+      `</div>`;
+  }
+
+  function renderDexCard(info) {
+    syncControlsUI('', '', false, false);
+    $hint.textContent = '';
+    $result.style.background = '';
+    $result.innerHTML =
+      info.kind === 'pokemon' ? pokeCardHTML(info.en) :
+      info.kind === 'move' ? moveCardHTML(info.en) : abilCardHTML(info.en);
   }
 
   // ── 자동완성 ──────────────────────────────────────────────────────────────
@@ -711,6 +882,15 @@
   buildSettings();
 
   $input.addEventListener('input', () => { render(); updateSuggest(); });
+
+  // 도감 카드의 '색이 다른' 토글 → 스프라이트 교체
+  $result.addEventListener('change', ev => {
+    const chk = ev.target.closest('.dpShinyChk');
+    if (!chk) return;
+    const img = $result.querySelector('.dpSprite');
+    const pid = img && img.getAttribute('data-pid');
+    if (img && pid) { img.style.visibility = ''; img.src = SPRITE_URL(pid, chk.checked); }
+  });
 
   render();
 })();

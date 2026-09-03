@@ -95,6 +95,16 @@ userAliases: {
 
 이 파일은 자동 반영이라 재생성이 필요 없다. `index.html` 이 `ko.js` 다음에 로드한다.
 
+## 2.5 도감 카드 데이터 (이름만 입력하면 뜨는 카드)
+
+포켓몬/기술/특성 이름만 입력하면 도감 카드가 뜬다. 데이터는 세 층이다.
+
+- `dex.js` — **자동 생성물**(대량 데이터 324종). `python tools/build_dex.py` 로 재생성(전국도감 스냅샷). 직접 편집 금지.
+- `champions_data.js` `speciesOverrides` — **신규/수정 포켓몬**. 계산기와 카드가 **같은 블록을 공유**(종족값·타입·무게·특성). 카드 표시 전용 필드(`ja`·`genus`·`gender`·`flavor`·`heightm`·`pid`)는 선택 추가. → 한 블록으로 계산기+카드 동시.
+- `champions_data.js` `abilityNotes`/`moveNotes` — dex.js 에 **설명이 빈 항목**(주로 9세대)을 한글명으로 채운다. 여기 값이 우선.
+
+즉 **추가·수정은 재생성 없이** `champions_data.js` 에서 끝난다. (스프라이트는 PokeAPI CDN 을 `pid` 로 참조 → 이미지 번들 불필요.)
+
 ## 3. 고친 뒤 검증
 
 브라우저 없이 파싱→계산→표시 전체를 확인한다:

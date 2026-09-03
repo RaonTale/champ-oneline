@@ -393,6 +393,56 @@ body {
   color: var(--muted);
 }
 
+/* ── 도감 카드 (이름만 입력 시) ─────────────────────────────────────────────── */
+.dexCard { width: 100%; text-align: left; }
+.typeBadge {
+  font-size: 12px; font-weight: 700; letter-spacing: .02em;
+  padding: 3px 11px; border-radius: 6px; border: 1px solid transparent;
+}
+/* 포켓몬 카드 */
+.dpTop { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+.dpSpriteWrap { flex: 0 0 88px; width: 88px; height: 88px; display: flex; align-items: center; justify-content: center; }
+.dpSprite { width: 88px; height: 88px; object-fit: contain; }
+.dpId { flex: 1 1 auto; min-width: 0; }
+.dpKo { font-size: 22px; font-weight: 800; letter-spacing: -.02em; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.dpGenus { font-size: 12px; font-weight: 600; color: var(--muted); }
+.dpEn { font-size: 13px; color: var(--muted); margin: 3px 0 9px; }
+.dpTypes { display: flex; gap: 6px; }
+.dpShiny { align-self: flex-start; display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+.dpShiny input { accent-color: var(--accent); }
+.dpMeta { font-size: 13.5px; color: var(--ink2); margin-bottom: 14px; display: flex; flex-wrap: wrap; align-items: center; }
+.dpMeta b { color: var(--ink); font-weight: 700; }
+.dpDot { margin: 0 10px; color: var(--line); }
+.dpStats { display: flex; gap: 2px; background: var(--bg); border-radius: 10px; padding: 11px 4px; margin-bottom: 16px; }
+.dpStat { flex: 1 1 0; min-width: 0; text-align: center; display: flex; flex-direction: column; gap: 3px; }
+.dpStatL { font-size: 11px; color: var(--muted); }
+.dpStatV { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.dpTotal { border-left: 1px solid var(--line); }
+.dpSection { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 9px; }
+.dpAbilBlock { margin-bottom: 14px; }
+.dpAbil { margin-bottom: 11px; }
+.dpAbil:last-child { margin-bottom: 0; }
+.dpAbilName { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 7px; }
+.dpHidden { font-size: 10.5px; font-weight: 700; color: var(--accent); padding: 1px 7px; border: 1px solid var(--accent); border-radius: 999px; }
+.dpAbilDesc { font-size: 13.5px; color: var(--ink2); line-height: 1.5; margin-top: 3px; }
+.dpFlavor { font-size: 14px; color: var(--ink2); line-height: 1.6; border-top: 1px dashed var(--line); padding-top: 12px; word-break: keep-all; }
+/* 기술 카드 */
+.dmHead { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.dmName { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.dmCat { font-size: 14px; color: var(--muted); font-weight: 600; }
+.dmStats { display: flex; gap: 2px; background: var(--bg); border-radius: 10px; padding: 13px 4px; margin-bottom: 15px; }
+.dmStat { flex: 1 1 0; min-width: 0; text-align: center; display: flex; flex-direction: column; gap: 4px; }
+.dmStatL { font-size: 12px; color: var(--muted); }
+.dmStatV { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.dmFlavor { font-size: 14.5px; color: var(--ink); line-height: 1.65; word-break: keep-all; }
+/* 특성 카드 */
+.daHead { display: flex; align-items: baseline; gap: 9px; margin-bottom: 12px; }
+.daEn { font-size: 13px; color: var(--muted); font-weight: 600; }
+.daCount { color: var(--accent); }
+.daOwners { max-height: 240px; overflow-y: auto; border-top: 1px solid var(--line); }
+.daOwnerRow { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 2px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.daOwnerRow:last-child { border-bottom: none; }
+
 /* 예시 칩 */
 .examples { margin-top: 22px; }
 .examplesLabel {
