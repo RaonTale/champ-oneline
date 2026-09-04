@@ -745,14 +745,15 @@
   }
 
   // ── 모바일 빠른입력 바 ──────────────────────────────────────────────────────
-  // 능력치 줄: 탭하면 h32·a32… (32=능력포인트 최대) 를 넣고, 뒤에 +/- 로 성격 보정.
-  // 보조 줄: vs·급소 는 독립 토큰(앞뒤 공백), +/-/% 는 앞 토큰에 그대로 붙는다.
+  // 능력치 줄: 글자(h/a/b/c/d)만 넣고 숫자는 직접(뒤에 +/- 로 성격 보정).
+  // 보조 줄: + - vs · 보정(h32) · 풀보정(공격 기술 분류 보고 물리 hb32 / 특수 hd32).
   const STATS = [
-    {t: '체력', ins: 'h32'}, {t: '공격', ins: 'a32'}, {t: '방어', ins: 'b32'},
-    {t: '특공', ins: 'c32'}, {t: '특방', ins: 'd32'},
+    {t: '체력', ins: 'h'}, {t: '공격', ins: 'a'}, {t: '방어', ins: 'b'},
+    {t: '특공', ins: 'c'}, {t: '특방', ins: 'd'},
   ];
   const MODS = [
-    {t: '+'}, {t: '-'}, {t: 'vs', word: true}, {t: '급소', word: true}, {t: '%'},
+    {t: '+', nature: true}, {t: '-', nature: true}, {t: 'vs', word: true},
+    {t: '보정', fix: 'h32'}, {t: '풀보정', fullfix: true},
   ];
   // lead: 앞 토큰과 공백으로 분리 · trail: 뒤에 공백 추가
   function insertToken(text, {lead = false, trail = false} = {}) {
@@ -783,6 +784,21 @@
     $input.setSelectionRange(caret, caret);
     render(); updateSuggest();
   }
+  // 공격측(vs 왼쪽) 기술의 분류(물리/특수)를 읽는다.
+  function attackerMoveCategory() {
+    try {
+      const spec = window.CC.parse($input.value);
+      const mv = spec.attacker && spec.attacker.move;
+      if (mv) return ((window.MOVEINFO || {})[mv] || {}).c || null;
+    } catch (e) { /* 무시 */ }
+    return null;
+  }
+  // 풀보정: 물리 공격이면 hb32, 특수면 hd32, 판단 불가면 h32 를 방어측에 넣는다.
+  function insertFullFix() {
+    const cat = attackerMoveCategory();
+    const spread = cat === 'Physical' ? 'hb32' : cat === 'Special' ? 'hd32' : 'h32';
+    insertToken(spread, {lead: true});
+  }
   const $quickbar = document.getElementById('quickbar');
   if ($quickbar) {
     const mkBtn = (label, cls, onClick) => {
@@ -797,15 +813,17 @@
     const statRow = document.createElement('div');
     statRow.className = 'qrow';
     for (const s of STATS) {
-      // 능력치는 앞뒤 공백(자동 스페이스). 뒤 +/- 는 insertNature 가 공백을 먹고 붙인다.
-      statRow.appendChild(mkBtn(s.t, 'qkey qstat', () => insertToken(s.ins, {lead: true, trail: true})));
+      // 글자만 넣고 뒤엔 공백 없음 → 사용자가 숫자를 이어 친다.
+      statRow.appendChild(mkBtn(s.t, 'qkey qstat', () => insertToken(s.ins, {lead: true})));
     }
     const modRow = document.createElement('div');
     modRow.className = 'qrow';
     for (const m of MODS) {
-      const onClick = (m.t === '+' || m.t === '-')
-        ? () => insertNature(m.t)
-        : () => insertToken(m.t, m.word ? {lead: true, trail: true} : {});
+      let onClick;
+      if (m.nature) onClick = () => insertNature(m.t);
+      else if (m.word) onClick = () => insertToken(m.t, {lead: true, trail: true});
+      else if (m.fix) onClick = () => insertToken(m.fix, {lead: true});
+      else if (m.fullfix) onClick = insertFullFix;
       modRow.appendChild(mkBtn(m.t, 'qkey', onClick));
     }
     $quickbar.appendChild(statRow);
