@@ -388,7 +388,7 @@
     const p = cardPokemon(en);
     const typesHtml = p.types.map(t => typeBadge(capType(t))).join('');
     const sprite = p.pid != null
-      ? `<div class="dpSpriteWrap"><img class="dpSprite" data-pid="${p.pid}" src="${SPRITE_URL(p.pid, false)}" alt="${esc(p.ko)}" loading="lazy" onerror="this.style.visibility='hidden'"></div>`
+      ? `<div class="dpSpriteWrap"><img class="dpSprite" src="${SPRITE_URL(p.pid, false)}" alt="${esc(p.ko)}" loading="lazy" onerror="this.style.visibility='hidden'"></div>`
       : '';
     const meta = [
       p.height != null ? `키 <b>${p.height / 10}</b> m` : '',
@@ -408,7 +408,6 @@
         `<div class="dpKo">${esc(p.ko)}${p.genus ? `<span class="dpGenus">${esc(p.genus)}</span>` : ''}</div>` +
         `<div class="dpEn">${esc(subline)}</div>` +
         `<div class="dpTypes">${typesHtml}</div></div>` +
-        (p.pid != null ? `<label class="dpShiny"><input type="checkbox" class="dpShinyChk"><span>색이 다른</span></label>` : '') +
       `</div>` +
       `<div class="dpMeta">${meta}</div>` +
       `<div class="dpStats">${statCells}</div>` +
@@ -911,15 +910,6 @@
     $clear.addEventListener('mousedown', ev => ev.preventDefault()); // 입력창 blur 방지
     $clear.addEventListener('click', () => { $input.value = ''; hideSuggest(); render(); $input.focus(); });
   }
-
-  // 도감 카드의 '색이 다른' 토글 → 스프라이트 교체
-  $result.addEventListener('change', ev => {
-    const chk = ev.target.closest('.dpShinyChk');
-    if (!chk) return;
-    const img = $result.querySelector('.dpSprite');
-    const pid = img && img.getAttribute('data-pid');
-    if (img && pid) { img.style.visibility = ''; img.src = SPRITE_URL(pid, chk.checked); }
-  });
 
   render();
 })();
