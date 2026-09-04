@@ -538,6 +538,7 @@ body {
 }
 .foot a { color: var(--muted); }
 .foot a:hover { color: var(--accent); }
+.footCopy { display: block; margin-top: 6px; font-size: 11px; opacity: .8; }
 
 /* 빠른입력 바 — 키보드 없이 자주 쓰는 토큰을 원탭으로 (설정에서 on/off) */
 /* 두 그룹(능력치·보조)을 flex-wrap 으로 배치: 넓으면 나란히 1줄, 좁으면 2줄로 접힘 */

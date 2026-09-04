@@ -310,8 +310,7 @@
   // ── 도감 카드 (이름만 입력하면 그 포켓몬/기술/특성 카드) ──────────────────────
   const STAT_KO = ['HP', '공격', '방어', '특공', '특방', '스피드'];
   const capType = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
-  const SPRITE_URL = (pid, shiny) =>
-    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${shiny ? 'shiny/' : ''}${pid}.png`;
+  const SPRITE_URL = pid => `assets/sprites/${pid}.png`; // 로컬 번들(오프라인)
   const abilityKo = en => (window.KO.koName.ability && window.KO.koName.ability[en]) || en;
   function abilityFlavor(en) {
     const ko = abilityKo(en);
@@ -388,7 +387,7 @@
     const p = cardPokemon(en);
     const typesHtml = p.types.map(t => typeBadge(capType(t))).join('');
     const sprite = p.pid != null
-      ? `<div class="dpSpriteWrap"><img class="dpSprite" src="${SPRITE_URL(p.pid, false)}" alt="${esc(p.ko)}" loading="lazy" onerror="this.style.visibility='hidden'"></div>`
+      ? `<div class="dpSpriteWrap"><img class="dpSprite" src="${SPRITE_URL(p.pid)}" alt="${esc(p.ko)}" loading="lazy" onerror="this.style.visibility='hidden'"></div>`
       : '';
     const meta = [
       p.height != null ? `키 <b>${p.height / 10}</b> m` : '',

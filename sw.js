@@ -2,16 +2,23 @@
 //  · HTML(navigate): 네트워크 우선 → 항상 최신, 오프라인이면 캐시로 폴백
 //  · 정적 자원: stale-while-revalidate → 캐시로 즉시 응답 + 백그라운드 갱신
 //  · 첫 방문(온라인) 때 모든 자원이 캐시되어 이후 오프라인 동작
-const CACHE = 'champcalc-v3';
+const CACHE = 'champcalc-v4';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './assets/favicon.svg', './assets/icon-192.png', './assets/icon-512.png', './assets/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(CORE)).then(() => self.skipWaiting())
-  );
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE);
+    await c.addAll(CORE);
+    // 도감 스프라이트 프리캐시(완전 오프라인) — 실패해도 설치는 진행한다.
+    try {
+      const list = await fetch('./assets/sprites/list.json').then(r => r.json());
+      await Promise.allSettled(list.map(f => c.add('./assets/sprites/' + f)));
+    } catch (e) { /* 무시 */ }
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', e => {
