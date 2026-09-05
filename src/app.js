@@ -294,7 +294,7 @@
     if (desc.verdict) parts.push(`<div class="verdict">${esc(desc.verdict)}</div>`);
     if (desc.bar) parts.push(dmgBarHTML(desc.bar));
     if (desc.sub) parts.push(`<div class="sub">${esc(desc.sub)}</div>`);
-    parts.push('<button class="shareBtn" type="button">📷 이미지로 공유</button>');
+    parts.push('<button class="shareBtn" type="button" aria-label="결과 이미지로 공유" title="이미지로 공유">📷</button>');
     curShare = {spec, desc};
     $result.innerHTML = parts.join('');
     // 결과 칸 타입 배경색
@@ -470,7 +470,7 @@
     return {
       card: g('--card', '#1e2127'), ink: g('--ink', '#e8eaed'), ink2: g('--ink2', '#c4cad3'),
       muted: g('--muted', '#9aa0aa'), accent: g('--accent', '#ff5a5a'), line: g('--line', '#2c303a'),
-      bg: g('--bg', '#14161a'), ok: g('--ok', '#4ade80'),
+      bg: g('--bg', '#14161a'), ok: g('--ok', '#4ade80'), okSoft: g('--ok-soft', '#2f6b48'),
     };
   }
   function loadImg(src) {
@@ -518,33 +518,35 @@
       loadImg(sharePid(atkSp) ? SPRITE_URL(sharePid(atkSp)) : null),
       loadImg(sharePid(defSp) ? SPRITE_URL(sharePid(defSp)) : null),
     ]);
-    // 표시할 side 구성(공격/방어). durability 는 방어측만.
     const [lp, rp] = splitHead(desc.head || '');
     const sides = [];
-    if (atkSp) sides.push({sp: atkSp, img: atkImg, detail: sideDetail(rp ? lp : lp, shareKoName(atkSp))});
-    if (defSp) sides.push({sp: defSp, img: defImg, detail: sideDetail(rp || lp, shareKoName(defSp))});
+    if (atkSp) sides.push({sp: atkSp, img: atkImg, detail: sideDetail(lp, shareKoName(atkSp)), tag: '공격', tagColor: C.accent});
+    if (defSp) sides.push({sp: defSp, img: defImg, detail: sideDetail(rp || lp, shareKoName(defSp)), tag: '방어', tagColor: '#3a72e0'});
 
-    const W = 600, S = 2, P = 32;
-    let H = 62;                                   // 헤더~스프라이트 상단
-    H += sides.length ? 146 : 8;                  // 스프라이트+이름+투자
-    H += 68;                                       // 메인(간격 포함)
-    if (desc.eff != null && desc.eff !== 1 && EFF_INFO[desc.eff]) H += 24;
+    const W = 560, S = 2, P = 28, ROW = 66, iw = W - 2 * P;
+    const showEff = desc.eff != null && desc.eff !== 1 && EFF_INFO[desc.eff];
+    let H = 60;                                    // 헤더
+    H += sides.length * ROW + (sides.length === 2 ? 6 : 0);
+    H += 20;                                        // 구분선 영역
+    if (desc.index) H += 24;
+    H += 50;                                        // 메인(+eff 같은 줄)
     if (desc.verdict) H += 28;
+    if (desc.bar) H += 42;
     if (desc.sub) H += 24;
-    H += 42;                                       // 푸터
+    H += 40;                                        // 푸터
     const cv = document.createElement('canvas');
     cv.width = W * S; cv.height = H * S;
     const ctx = cv.getContext('2d');
     ctx.scale(S, S);
 
-    // 배경 + 타입 색 스트립
+    // 배경 + 타입 스트립
     ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
-    roundRectPath(ctx, 8, 8, W - 16, H - 16, 18); ctx.fillStyle = C.card; ctx.fill();
+    roundRectPath(ctx, 7, 7, W - 14, H - 14, 18); ctx.fillStyle = C.card; ctx.fill();
     const tHex = desc.type && TYPE_COLOR[desc.type];
-    if (tHex) { ctx.save(); roundRectPath(ctx, 8, 8, W - 16, 8, 4); ctx.fillStyle = tHex; ctx.fill(); ctx.restore(); }
+    if (tHex) { ctx.save(); roundRectPath(ctx, 7, 7, W - 14, 8, 4); ctx.fillStyle = tHex; ctx.fill(); ctx.restore(); }
 
     // 헤더
-    let y = 42;
+    let y = 40;
     ctx.textAlign = 'left'; ctx.font = '800 16px ' + SHARE_FONT; ctx.fillStyle = C.ink;
     ctx.fillText('⚡ 챔피언스 한 줄 계산기', P, y);
     const modeLabel = MODE_LABEL[spec.mode] || '';
@@ -554,52 +556,80 @@
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(modeLabel, W - P - mw / 2, y);
     y += 20;
 
-    // 스프라이트(크게) + 이름 + 투자
-    if (sides.length) {
-      const sz = 104, topY = y;
-      const drawMon = (s, cx) => {
-        if (s.img) ctx.drawImage(s.img, cx - sz / 2, topY, sz, sz);
-        else { // 스프라이트 없음(커스텀 몬 등) → 타입색 원 플레이스홀더
-          const p = cardPokemon(s.sp); const th = (p && p.types[0] && TYPE_COLOR[capType(p.types[0])]) || C.muted;
-          ctx.beginPath(); ctx.arc(cx, topY + sz / 2, sz / 2 - 8, 0, 7); ctx.fillStyle = th; ctx.globalAlpha = .18; ctx.fill(); ctx.globalAlpha = 1;
-          ctx.fillStyle = th; ctx.textAlign = 'center'; ctx.font = '700 30px ' + SHARE_FONT;
-          ctx.fillText(shareKoName(s.sp).slice(0, 1), cx, topY + sz / 2 + 11);
-        }
-        ctx.textAlign = 'center'; ctx.font = '800 16px ' + SHARE_FONT; ctx.fillStyle = C.ink;
-        ctx.fillText(shareKoName(s.sp), cx, topY + sz + 22);
-        if (s.detail) { ctx.font = '600 12.5px ' + SHARE_FONT; ctx.fillStyle = C.muted; fitText(ctx, s.detail, cx, topY + sz + 40, 250, 12.5, SHARE_FONT, '600'); }
-      };
-      if (sides.length === 2) {
-        drawMon(sides[0], W / 2 - 138);
-        drawMon(sides[1], W / 2 + 138);
-        ctx.textAlign = 'center'; ctx.font = '800 24px ' + SHARE_FONT; ctx.fillStyle = C.muted;
-        ctx.fillText('VS', W / 2, topY + sz / 2 + 8);
-      } else {
-        drawMon(sides[0], W / 2);
+    // 매치업 — 좌측 정렬, 스프라이트 + 이름 + 투자 (공격 위 / 방어 아래)
+    const sz = 56, nameX = P + sz + 14;
+    sides.forEach((s, i) => {
+      const top = y;
+      if (s.img) ctx.drawImage(s.img, P, top, sz, sz);
+      else {
+        const p = cardPokemon(s.sp); const th = (p && p.types[0] && TYPE_COLOR[capType(p.types[0])]) || C.muted;
+        ctx.beginPath(); ctx.arc(P + sz / 2, top + sz / 2, sz / 2 - 3, 0, 7); ctx.globalAlpha = .18; ctx.fillStyle = th; ctx.fill(); ctx.globalAlpha = 1;
+        ctx.fillStyle = th; ctx.textAlign = 'center'; ctx.font = '700 22px ' + SHARE_FONT; ctx.fillText(shareKoName(s.sp).slice(0, 1), P + sz / 2, top + sz / 2 + 8);
       }
-      y = topY + 146;
-    }
+      // 역할 태그
+      ctx.textAlign = 'left'; ctx.font = '700 10.5px ' + SHARE_FONT; ctx.fillStyle = s.tagColor;
+      ctx.fillText(s.tag, nameX, top + 12);
+      // 이름
+      ctx.font = '800 19px ' + SHARE_FONT; ctx.fillStyle = C.ink;
+      ctx.fillText(shareKoName(s.sp), nameX, top + 34);
+      // 투자·기술
+      if (s.detail) { ctx.font = '600 13px ' + SHARE_FONT; ctx.fillStyle = C.muted; fitText(ctx, s.detail, nameX, top + 52, iw - sz - 14, 13, SHARE_FONT, '600'); }
+      y += ROW;
+      if (i === 0 && sides.length === 2) y += 6;
+    });
 
-    // 메인(큰 값)
-    y += 46;
-    ctx.textAlign = 'center'; ctx.fillStyle = C.ink;
-    fitText(ctx, desc.main, W / 2, y, W - 2 * P, 34, SHARE_FONT, '800');
+    // 구분선
+    y += 4;
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(P, y); ctx.lineTo(W - P, y); ctx.stroke();
     y += 22;
-    if (desc.eff != null && desc.eff !== 1 && EFF_INFO[desc.eff]) {
+
+    // 지표(결정력→내구)
+    if (desc.index) {
+      ctx.textAlign = 'left'; ctx.font = '500 13px ' + SHARE_FONT; ctx.fillStyle = C.muted;
+      fitText(ctx, desc.index, P, y, iw, 13, SHARE_FONT, '500'); y += 24;
+    }
+    // 메인(큰 값, 좌측) + 상성 배지(우측 같은 줄)
+    ctx.textAlign = 'left'; ctx.fillStyle = C.ink; ctx.font = '800 30px ' + SHARE_FONT;
+    let ms = 30; while (ms > 16 && ctx.measureText(desc.main).width > iw - (showEff ? 120 : 0)) { ms -= 1; ctx.font = `800 ${ms}px ${SHARE_FONT}`; }
+    ctx.fillText(desc.main, P, y + 22);
+    if (showEff) {
       const ei = EFF_INFO[desc.eff];
-      ctx.textAlign = 'center'; ctx.font = '700 15px ' + SHARE_FONT; ctx.fillStyle = ei.c;
-      ctx.fillText(`${ei.t} ×${desc.eff}`, W / 2, y); y += 24;
+      ctx.textAlign = 'right'; ctx.font = '700 14px ' + SHARE_FONT; ctx.fillStyle = ei.c;
+      ctx.fillText(`${ei.t} ×${desc.eff}`, W - P, y + 20);
     }
+    y += 50;
+    // 판정
     if (desc.verdict) {
-      ctx.textAlign = 'center'; ctx.fillStyle = C.ok;
-      fitText(ctx, desc.verdict, W / 2, y + 4, W - 2 * P, 17, SHARE_FONT, '700'); y += 28;
+      ctx.textAlign = 'left'; ctx.fillStyle = C.ok;
+      fitText(ctx, desc.verdict, P, y, iw, 17, SHARE_FONT, '800'); y += 28;
     }
+    // 체력 바
+    if (desc.bar) {
+      const bh = 26, by = y;
+      const clamp = v => Math.max(0, Math.min(100, v));
+      const remMin = 100 - desc.bar.max, remMax = 100 - desc.bar.min;
+      const green = clamp(remMin), stripe = Math.max(0, clamp(remMax) - green);
+      const lethal = desc.bar.min >= 100;
+      roundRectPath(ctx, P, by, iw, bh, 7); ctx.fillStyle = C.accent; ctx.fill();
+      ctx.save(); roundRectPath(ctx, P, by, iw, bh, 7); ctx.clip();
+      ctx.fillStyle = C.okSoft; ctx.fillRect(P + iw * green / 100, by, iw * stripe / 100, bh);
+      ctx.fillStyle = C.ok; ctx.fillRect(P, by, iw * green / 100, bh);
+      ctx.restore();
+      const label = lethal ? '기절! (확정)' : desc.bar.max >= 100
+        ? `남은 HP 0~${Math.round(remMax)}% · 난수 기절` : `남은 HP ${Math.round(remMin)}~${Math.round(remMax)}%`;
+      ctx.save(); ctx.textAlign = 'center'; ctx.font = '800 13px ' + SHARE_FONT; ctx.fillStyle = '#fff';
+      ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 2; ctx.fillText(label, P + iw / 2, by + bh / 2 + 5); ctx.restore();
+      y += bh + 16;
+    }
+    // 부가정보
     if (desc.sub) {
-      ctx.textAlign = 'center'; ctx.fillStyle = C.muted;
-      fitText(ctx, desc.sub, W / 2, y + 2, W - 2 * P, 13, SHARE_FONT, '400'); y += 24;
+      ctx.textAlign = 'left'; ctx.fillStyle = C.muted;
+      fitText(ctx, desc.sub, P, y, iw, 13, SHARE_FONT, '400'); y += 24;
     }
-    ctx.textAlign = 'center'; ctx.font = '400 12px ' + SHARE_FONT; ctx.fillStyle = C.muted;
-    ctx.fillText('raontale.github.io/champ-oneline', W / 2, H - 20);
+    // 푸터
+    ctx.textAlign = 'center'; ctx.font = '400 11.5px ' + SHARE_FONT; ctx.fillStyle = C.muted;
+    ctx.fillText('raontale.github.io/champ-oneline', W / 2, H - 18);
     return cv;
   }
 
