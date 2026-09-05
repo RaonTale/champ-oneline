@@ -373,6 +373,20 @@ body {
   font-weight: 700;
   color: var(--ok);
 }
+/* 결과 이미지 공유 버튼 */
+.shareBtn {
+  align-self: flex-start;
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: border-color .12s, color .12s;
+}
+.shareBtn:hover { border-color: var(--accent); color: var(--accent); }
+.shareBtn:active { transform: scale(.97); }
 
 /* 데미지 바 — 맞은 뒤 남는 체력 게이지 (초록=생존HP, 빗금=난수구간, 빨강바탕=깎임) */
 .dmgBar {

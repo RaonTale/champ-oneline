@@ -8,6 +8,7 @@
   const $chips = document.getElementById('chips');
   const $controls = document.getElementById('controls');
   const $clear = document.getElementById('clearInput');
+  let curShare = null; // 현재 계산 결과(이미지 공유용) {spec, desc}
 
   // ── 라이트/다크 (설정 패널의 '다크 모드' 스위치로 전환) ────────────────────────
   function effectiveTheme() {
@@ -238,6 +239,7 @@
   // ── 렌더 ───────────────────────────────────────────────────────────────────
   function render() {
     $result.style.background = ''; // 이전 타입 배경 리셋 (데미지 결과에서만 다시 칠함)
+    curShare = null;               // 계산 결과일 때만 아래에서 다시 채움(이미지 공유용)
     const text = $input.value;
     if ($clear) $clear.hidden = !text;   // 텍스트 있을 때만 지우기 버튼
     if (!text.trim()) {
@@ -292,6 +294,8 @@
     if (desc.verdict) parts.push(`<div class="verdict">${esc(desc.verdict)}</div>`);
     if (desc.bar) parts.push(dmgBarHTML(desc.bar));
     if (desc.sub) parts.push(`<div class="sub">${esc(desc.sub)}</div>`);
+    parts.push('<button class="shareBtn" type="button">📷 이미지로 공유</button>');
+    curShare = {spec, desc};
     $result.innerHTML = parts.join('');
     // 결과 칸 타입 배경색
     $result.style.background = desc.type
@@ -457,6 +461,149 @@
     $result.innerHTML =
       info.kind === 'pokemon' ? pokeCardHTML(info.en) :
       info.kind === 'move' ? moveCardHTML(info.en) : abilCardHTML(info.en);
+  }
+
+  // ── 결과 이미지 공유 (캔버스 직접 그리기 · 외부 라이브러리 없음 · 오프라인 OK) ──
+  function shareThemeColors() {
+    const cs = getComputedStyle(document.documentElement);
+    const g = (n, d) => ((cs.getPropertyValue(n) || '').trim() || d);
+    return {
+      card: g('--card', '#1e2127'), ink: g('--ink', '#e8eaed'), ink2: g('--ink2', '#c4cad3'),
+      muted: g('--muted', '#9aa0aa'), accent: g('--accent', '#ff5a5a'), line: g('--line', '#2c303a'),
+      bg: g('--bg', '#14161a'), ok: g('--ok', '#4ade80'),
+    };
+  }
+  function loadImg(src) {
+    return new Promise(res => {
+      if (!src) return res(null);
+      const im = new Image();
+      im.onload = () => res(im); im.onerror = () => res(null);
+      im.src = src;
+    });
+  }
+  function sharePid(sp) { const p = sp ? cardPokemon(sp) : null; return p && p.pid != null ? p.pid : null; }
+  function shareKoName(sp) { return (window.KO.koName.pokemon && window.KO.koName.pokemon[sp]) || sp || ''; }
+  function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function fitText(ctx, text, cx, y, maxW, size, font, weight) {
+    let s = size;
+    ctx.font = `${weight} ${s}px ${font}`;
+    while (s > 9 && ctx.measureText(text).width > maxW) { s -= 1; ctx.font = `${weight} ${s}px ${font}`; }
+    ctx.fillText(text, cx, y);
+  }
+  const SHARE_FONT = '"Pretendard", -apple-system, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+
+  async function buildShareCanvas() {
+    const {spec, desc} = curShare;
+    const C = shareThemeColors();
+    const atkSp = spec.attacker && spec.attacker.species;
+    const defSp = spec.defender && spec.defender.species;
+    const [atkImg, defImg] = await Promise.all([
+      loadImg(sharePid(atkSp) ? SPRITE_URL(sharePid(atkSp)) : null),
+      loadImg(sharePid(defSp) ? SPRITE_URL(sharePid(defSp)) : null),
+    ]);
+    const hasSprites = !!(atkImg || defImg);
+    const P = 30;
+    let H = P + 30 + 30 + 54 + 40;             // 헤더 + 매치업 + 메인 + 푸터
+    if (hasSprites) H += 128;
+    if (desc.eff != null && desc.eff !== 1 && EFF_INFO[desc.eff]) H += 22;
+    if (desc.verdict) H += 30;
+    if (desc.sub) H += 26;
+    const W = 600, S = 2;
+    const cv = document.createElement('canvas');
+    cv.width = W * S; cv.height = H * S;
+    const ctx = cv.getContext('2d');
+    ctx.scale(S, S);
+
+    // 배경
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+    roundRectPath(ctx, 8, 8, W - 16, H - 16, 18); ctx.fillStyle = C.card; ctx.fill();
+    const tHex = desc.type && TYPE_COLOR[desc.type];
+    if (tHex) { ctx.save(); roundRectPath(ctx, 8, 8, W - 16, 8, 4); ctx.fillStyle = tHex; ctx.fill(); ctx.restore(); }
+
+    let y = P + 12;
+    // 헤더
+    ctx.textAlign = 'left'; ctx.font = '700 16px ' + SHARE_FONT;
+    ctx.fillStyle = C.ink; ctx.fillText('⚡ 챔피언스 한 줄 계산기', P, y);
+    const modeLabel = MODE_LABEL[spec.mode] || '';
+    const modeColor = {damage: C.accent, firepower: '#e0803a', durability: '#3a72e0'}[spec.mode] || C.accent;
+    ctx.font = '700 12px ' + SHARE_FONT; const mw = ctx.measureText(modeLabel).width + 22;
+    roundRectPath(ctx, W - P - mw, y - 15, mw, 23, 11); ctx.fillStyle = modeColor; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(modeLabel, W - P - mw / 2, y);
+    y += 22;
+
+    // 스프라이트 + 이름
+    if (hasSprites) {
+      const sz = 84;
+      const drawMon = (img, sp, cx) => {
+        if (img) ctx.drawImage(img, cx - sz / 2, y, sz, sz);
+        ctx.textAlign = 'center'; ctx.font = '700 15px ' + SHARE_FONT; ctx.fillStyle = C.ink;
+        ctx.fillText(shareKoName(sp), cx, y + sz + 20);
+      };
+      if (atkImg && defImg) {
+        drawMon(atkImg, atkSp, W / 2 - 135);
+        drawMon(defImg, defSp, W / 2 + 135);
+        ctx.textAlign = 'center'; ctx.font = '700 28px ' + SHARE_FONT; ctx.fillStyle = C.muted;
+        ctx.fillText('→', W / 2, y + sz / 2 + 10);
+      } else {
+        drawMon(atkImg || defImg, atkImg ? atkSp : defSp, W / 2);
+      }
+      y += sz + 44;
+    }
+
+    // 매치업 전체 정보
+    ctx.textAlign = 'center'; ctx.fillStyle = C.ink2;
+    fitText(ctx, desc.head, W / 2, y, W - 2 * P, 14, SHARE_FONT, '500');
+    y += 34;
+    // 메인(큰 값)
+    ctx.textAlign = 'center'; ctx.fillStyle = C.ink;
+    fitText(ctx, desc.main, W / 2, y + 12, W - 2 * P, 32, SHARE_FONT, '800');
+    y += 44;
+    // 상성 배지
+    if (desc.eff != null && desc.eff !== 1 && EFF_INFO[desc.eff]) {
+      const ei = EFF_INFO[desc.eff];
+      ctx.textAlign = 'center'; ctx.font = '700 15px ' + SHARE_FONT; ctx.fillStyle = ei.c;
+      ctx.fillText(`${ei.t} ×${desc.eff}`, W / 2, y); y += 22;
+    }
+    // verdict
+    if (desc.verdict) {
+      ctx.textAlign = 'center'; ctx.fillStyle = C.ok;
+      fitText(ctx, desc.verdict, W / 2, y + 6, W - 2 * P, 17, SHARE_FONT, '700'); y += 30;
+    }
+    // sub
+    if (desc.sub) {
+      ctx.textAlign = 'center'; ctx.fillStyle = C.muted;
+      fitText(ctx, desc.sub, W / 2, y + 4, W - 2 * P, 13, SHARE_FONT, '400'); y += 26;
+    }
+    // 푸터
+    ctx.textAlign = 'center'; ctx.font = '400 12px ' + SHARE_FONT; ctx.fillStyle = C.muted;
+    ctx.fillText('raontale.github.io/champ-oneline', W / 2, H - 20);
+    return cv;
+  }
+
+  async function shareImage() {
+    if (!curShare) return;
+    let cv;
+    try { cv = await buildShareCanvas(); } catch (e) { return; }
+    cv.toBlob(async blob => {
+      if (!blob) return;
+      const file = new File([blob], 'champcalc.png', {type: 'image/png'});
+      if (navigator.canShare && navigator.canShare({files: [file]})) {
+        try { await navigator.share({files: [file], title: '챔피언스 계산 결과'}); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'champcalc.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }, 'image/png');
   }
 
   // ── 자동완성 ──────────────────────────────────────────────────────────────
@@ -909,6 +1056,9 @@
     $clear.addEventListener('mousedown', ev => ev.preventDefault()); // 입력창 blur 방지
     $clear.addEventListener('click', () => { $input.value = ''; hideSuggest(); render(); $input.focus(); });
   }
+
+  // 결과 이미지 공유 버튼(결과 카드 안, 위임)
+  $result.addEventListener('click', ev => { if (ev.target.closest('.shareBtn')) shareImage(); });
 
   render();
 })();
