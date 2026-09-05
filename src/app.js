@@ -500,6 +500,15 @@
   }
   const SHARE_FONT = '"Pretendard", -apple-system, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
 
+  // desc.head("공32+ 한카리아스 지진 → 체32 방32+ 더시마사리")를 좌/우로 나눈다.
+  function splitHead(head) {
+    const i = head.indexOf('→');
+    return i >= 0 ? [head.slice(0, i).trim(), head.slice(i + 1).trim()] : [head.trim(), ''];
+  }
+  function sideDetail(part, koName) {
+    return part.replace(koName, '').replace(/\s+/g, ' ').trim();  // 이름 뺀 나머지(투자·기술)
+  }
+
   async function buildShareCanvas() {
     const {spec, desc} = curShare;
     const C = shareThemeColors();
@@ -509,80 +518,86 @@
       loadImg(sharePid(atkSp) ? SPRITE_URL(sharePid(atkSp)) : null),
       loadImg(sharePid(defSp) ? SPRITE_URL(sharePid(defSp)) : null),
     ]);
-    const hasSprites = !!(atkImg || defImg);
-    const P = 30;
-    let H = P + 30 + 30 + 54 + 40;             // 헤더 + 매치업 + 메인 + 푸터
-    if (hasSprites) H += 128;
-    if (desc.eff != null && desc.eff !== 1 && EFF_INFO[desc.eff]) H += 22;
-    if (desc.verdict) H += 30;
-    if (desc.sub) H += 26;
-    const W = 600, S = 2;
+    // 표시할 side 구성(공격/방어). durability 는 방어측만.
+    const [lp, rp] = splitHead(desc.head || '');
+    const sides = [];
+    if (atkSp) sides.push({sp: atkSp, img: atkImg, detail: sideDetail(rp ? lp : lp, shareKoName(atkSp))});
+    if (defSp) sides.push({sp: defSp, img: defImg, detail: sideDetail(rp || lp, shareKoName(defSp))});
+
+    const W = 600, S = 2, P = 32;
+    let H = 62;                                   // 헤더~스프라이트 상단
+    H += sides.length ? 146 : 8;                  // 스프라이트+이름+투자
+    H += 68;                                       // 메인(간격 포함)
+    if (desc.eff != null && desc.eff !== 1 && EFF_INFO[desc.eff]) H += 24;
+    if (desc.verdict) H += 28;
+    if (desc.sub) H += 24;
+    H += 42;                                       // 푸터
     const cv = document.createElement('canvas');
     cv.width = W * S; cv.height = H * S;
     const ctx = cv.getContext('2d');
     ctx.scale(S, S);
 
-    // 배경
+    // 배경 + 타입 색 스트립
     ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
     roundRectPath(ctx, 8, 8, W - 16, H - 16, 18); ctx.fillStyle = C.card; ctx.fill();
     const tHex = desc.type && TYPE_COLOR[desc.type];
     if (tHex) { ctx.save(); roundRectPath(ctx, 8, 8, W - 16, 8, 4); ctx.fillStyle = tHex; ctx.fill(); ctx.restore(); }
 
-    let y = P + 12;
     // 헤더
-    ctx.textAlign = 'left'; ctx.font = '700 16px ' + SHARE_FONT;
-    ctx.fillStyle = C.ink; ctx.fillText('⚡ 챔피언스 한 줄 계산기', P, y);
+    let y = 42;
+    ctx.textAlign = 'left'; ctx.font = '800 16px ' + SHARE_FONT; ctx.fillStyle = C.ink;
+    ctx.fillText('⚡ 챔피언스 한 줄 계산기', P, y);
     const modeLabel = MODE_LABEL[spec.mode] || '';
     const modeColor = {damage: C.accent, firepower: '#e0803a', durability: '#3a72e0'}[spec.mode] || C.accent;
     ctx.font = '700 12px ' + SHARE_FONT; const mw = ctx.measureText(modeLabel).width + 22;
     roundRectPath(ctx, W - P - mw, y - 15, mw, 23, 11); ctx.fillStyle = modeColor; ctx.fill();
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(modeLabel, W - P - mw / 2, y);
-    y += 22;
+    y += 20;
 
-    // 스프라이트 + 이름
-    if (hasSprites) {
-      const sz = 84;
-      const drawMon = (img, sp, cx) => {
-        if (img) ctx.drawImage(img, cx - sz / 2, y, sz, sz);
-        ctx.textAlign = 'center'; ctx.font = '700 15px ' + SHARE_FONT; ctx.fillStyle = C.ink;
-        ctx.fillText(shareKoName(sp), cx, y + sz + 20);
+    // 스프라이트(크게) + 이름 + 투자
+    if (sides.length) {
+      const sz = 104, topY = y;
+      const drawMon = (s, cx) => {
+        if (s.img) ctx.drawImage(s.img, cx - sz / 2, topY, sz, sz);
+        else { // 스프라이트 없음(커스텀 몬 등) → 타입색 원 플레이스홀더
+          const p = cardPokemon(s.sp); const th = (p && p.types[0] && TYPE_COLOR[capType(p.types[0])]) || C.muted;
+          ctx.beginPath(); ctx.arc(cx, topY + sz / 2, sz / 2 - 8, 0, 7); ctx.fillStyle = th; ctx.globalAlpha = .18; ctx.fill(); ctx.globalAlpha = 1;
+          ctx.fillStyle = th; ctx.textAlign = 'center'; ctx.font = '700 30px ' + SHARE_FONT;
+          ctx.fillText(shareKoName(s.sp).slice(0, 1), cx, topY + sz / 2 + 11);
+        }
+        ctx.textAlign = 'center'; ctx.font = '800 16px ' + SHARE_FONT; ctx.fillStyle = C.ink;
+        ctx.fillText(shareKoName(s.sp), cx, topY + sz + 22);
+        if (s.detail) { ctx.font = '600 12.5px ' + SHARE_FONT; ctx.fillStyle = C.muted; fitText(ctx, s.detail, cx, topY + sz + 40, 250, 12.5, SHARE_FONT, '600'); }
       };
-      if (atkImg && defImg) {
-        drawMon(atkImg, atkSp, W / 2 - 135);
-        drawMon(defImg, defSp, W / 2 + 135);
-        ctx.textAlign = 'center'; ctx.font = '700 28px ' + SHARE_FONT; ctx.fillStyle = C.muted;
-        ctx.fillText('→', W / 2, y + sz / 2 + 10);
+      if (sides.length === 2) {
+        drawMon(sides[0], W / 2 - 138);
+        drawMon(sides[1], W / 2 + 138);
+        ctx.textAlign = 'center'; ctx.font = '800 24px ' + SHARE_FONT; ctx.fillStyle = C.muted;
+        ctx.fillText('VS', W / 2, topY + sz / 2 + 8);
       } else {
-        drawMon(atkImg || defImg, atkImg ? atkSp : defSp, W / 2);
+        drawMon(sides[0], W / 2);
       }
-      y += sz + 44;
+      y = topY + 146;
     }
 
-    // 매치업 전체 정보
-    ctx.textAlign = 'center'; ctx.fillStyle = C.ink2;
-    fitText(ctx, desc.head, W / 2, y, W - 2 * P, 14, SHARE_FONT, '500');
-    y += 34;
     // 메인(큰 값)
+    y += 46;
     ctx.textAlign = 'center'; ctx.fillStyle = C.ink;
-    fitText(ctx, desc.main, W / 2, y + 12, W - 2 * P, 32, SHARE_FONT, '800');
-    y += 44;
-    // 상성 배지
+    fitText(ctx, desc.main, W / 2, y, W - 2 * P, 34, SHARE_FONT, '800');
+    y += 22;
     if (desc.eff != null && desc.eff !== 1 && EFF_INFO[desc.eff]) {
       const ei = EFF_INFO[desc.eff];
       ctx.textAlign = 'center'; ctx.font = '700 15px ' + SHARE_FONT; ctx.fillStyle = ei.c;
-      ctx.fillText(`${ei.t} ×${desc.eff}`, W / 2, y); y += 22;
+      ctx.fillText(`${ei.t} ×${desc.eff}`, W / 2, y); y += 24;
     }
-    // verdict
     if (desc.verdict) {
       ctx.textAlign = 'center'; ctx.fillStyle = C.ok;
-      fitText(ctx, desc.verdict, W / 2, y + 6, W - 2 * P, 17, SHARE_FONT, '700'); y += 30;
+      fitText(ctx, desc.verdict, W / 2, y + 4, W - 2 * P, 17, SHARE_FONT, '700'); y += 28;
     }
-    // sub
     if (desc.sub) {
       ctx.textAlign = 'center'; ctx.fillStyle = C.muted;
-      fitText(ctx, desc.sub, W / 2, y + 4, W - 2 * P, 13, SHARE_FONT, '400'); y += 26;
+      fitText(ctx, desc.sub, W / 2, y + 2, W - 2 * P, 13, SHARE_FONT, '400'); y += 24;
     }
-    // 푸터
     ctx.textAlign = 'center'; ctx.font = '400 12px ' + SHARE_FONT; ctx.fillStyle = C.muted;
     ctx.fillText('raontale.github.io/champ-oneline', W / 2, H - 20);
     return cv;
