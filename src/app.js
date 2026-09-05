@@ -271,11 +271,11 @@
 
     applyControls(spec);
 
-    let desc;
+    let desc, out;
     try {
-      if (spec.mode === 'damage') desc = window.CC.describeDamage(spec, window.CC.damage(spec));
-      else if (spec.mode === 'firepower') desc = window.CC.describeFirepower(spec, window.CC.firepower(spec));
-      else if (spec.mode === 'durability') desc = window.CC.describeDurability(spec, window.CC.durability(spec));
+      if (spec.mode === 'damage') { out = window.CC.damage(spec); desc = window.CC.describeDamage(spec, out); }
+      else if (spec.mode === 'firepower') { out = window.CC.firepower(spec); desc = window.CC.describeFirepower(spec, out); }
+      else if (spec.mode === 'durability') { out = window.CC.durability(spec); desc = window.CC.describeDurability(spec, out); }
     } catch (e) {
       $result.innerHTML = `<div class="error">계산 중 오류: ${esc(e.message)}</div>`;
       renderHint(spec);
@@ -295,7 +295,7 @@
     if (desc.bar) parts.push(dmgBarHTML(desc.bar));
     if (desc.sub) parts.push(`<div class="sub">${esc(desc.sub)}</div>`);
     parts.push('<button class="shareBtn" type="button" aria-label="결과 이미지로 공유" title="이미지로 공유">📷</button>');
-    curShare = {spec, desc};
+    curShare = {spec, desc, out};
     $result.innerHTML = parts.join('');
     // 결과 칸 타입 배경색
     $result.style.background = desc.type
@@ -518,12 +518,26 @@
       loadImg(sharePid(atkSp) ? SPRITE_URL(sharePid(atkSp)) : null),
       loadImg(sharePid(defSp) ? SPRITE_URL(sharePid(defSp)) : null),
     ]);
+    // 실능력치·특성 (엔진 결과 객체에서)
+    const out = curShare.out || {};
+    const cat = out.move && out.move.category;
+    const atkPoke = out.attacker;
+    const defPoke = out.defender || out.pokemon;
+    const pokeAbil = poke => { const en = poke && poke.ability; return en ? abilityKo(en) : ''; };
+    const statLine = (poke, role) => {
+      const St = poke && (poke.stats || poke.rawStats);
+      if (!St) return '';
+      if (role === '공격') { const sp = cat === 'Special'; return `${sp ? '특공' : '공격'} ${sp ? St.spa : St.atk} · 스피드 ${St.spe}`; }
+      if (cat) { const sp = cat === 'Special'; return `체력 ${St.hp} · ${sp ? '특방' : '방어'} ${sp ? St.spd : St.def} · 스피드 ${St.spe}`; }
+      return `체력 ${St.hp} · 방어 ${St.def} · 특방 ${St.spd} · 스피드 ${St.spe}`;
+    };
+
     const [lp, rp] = splitHead(desc.head || '');
     const sides = [];
-    if (atkSp) sides.push({sp: atkSp, img: atkImg, detail: sideDetail(lp, shareKoName(atkSp)), tag: '공격', tagColor: C.accent});
-    if (defSp) sides.push({sp: defSp, img: defImg, detail: sideDetail(rp || lp, shareKoName(defSp)), tag: '방어', tagColor: '#3a72e0'});
+    if (atkSp) sides.push({sp: atkSp, img: atkImg, detail: sideDetail(lp, shareKoName(atkSp)), tag: '공격', tagColor: C.accent, ability: pokeAbil(atkPoke), stat: statLine(atkPoke, '공격')});
+    if (defSp) sides.push({sp: defSp, img: defImg, detail: sideDetail(rp || lp, shareKoName(defSp)), tag: '방어', tagColor: '#3a72e0', ability: pokeAbil(defPoke), stat: statLine(defPoke, '방어')});
 
-    const W = 560, S = 2, P = 28, ROW = 66, iw = W - 2 * P;
+    const W = 620, S = 2, P = 28, ROW = 66, iw = W - 2 * P;
     const showEff = desc.eff != null && desc.eff !== 1 && EFF_INFO[desc.eff];
     let H = 60;                                    // 헤더
     H += sides.length * ROW + (sides.length === 2 ? 6 : 0);
@@ -556,8 +570,8 @@
     ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.fillText(modeLabel, W - P - mw / 2, y);
     y += 20;
 
-    // 매치업 — 좌측 정렬, 스프라이트 + 이름 + 투자 (공격 위 / 방어 아래)
-    const sz = 56, nameX = P + sz + 14;
+    // 매치업 — 좌측: 스프라이트+이름+투자 · 우측: 특성+실수치 (공격 위 / 방어 아래)
+    const sz = 56, nameX = P + sz + 14, leftW = 236, rightX = W - P;
     sides.forEach((s, i) => {
       const top = y;
       if (s.img) ctx.drawImage(s.img, P, top, sz, sz);
@@ -566,14 +580,15 @@
         ctx.beginPath(); ctx.arc(P + sz / 2, top + sz / 2, sz / 2 - 3, 0, 7); ctx.globalAlpha = .18; ctx.fillStyle = th; ctx.fill(); ctx.globalAlpha = 1;
         ctx.fillStyle = th; ctx.textAlign = 'center'; ctx.font = '700 22px ' + SHARE_FONT; ctx.fillText(shareKoName(s.sp).slice(0, 1), P + sz / 2, top + sz / 2 + 8);
       }
-      // 역할 태그
+      // 좌측: 역할 태그 · 이름 · 투자
       ctx.textAlign = 'left'; ctx.font = '700 10.5px ' + SHARE_FONT; ctx.fillStyle = s.tagColor;
       ctx.fillText(s.tag, nameX, top + 12);
-      // 이름
-      ctx.font = '800 19px ' + SHARE_FONT; ctx.fillStyle = C.ink;
-      ctx.fillText(shareKoName(s.sp), nameX, top + 34);
-      // 투자·기술
-      if (s.detail) { ctx.font = '600 13px ' + SHARE_FONT; ctx.fillStyle = C.muted; fitText(ctx, s.detail, nameX, top + 52, iw - sz - 14, 13, SHARE_FONT, '600'); }
+      ctx.fillStyle = C.ink; fitText(ctx, shareKoName(s.sp), nameX, top + 34, leftW, 19, SHARE_FONT, '800');
+      if (s.detail) { ctx.fillStyle = C.muted; fitText(ctx, s.detail, nameX, top + 52, leftW, 13, SHARE_FONT, '600'); }
+      // 우측: 특성 · 실수치
+      ctx.textAlign = 'right';
+      if (s.ability) { ctx.fillStyle = C.ink2; fitText(ctx, s.ability, rightX, top + 24, 210, 14, SHARE_FONT, '700'); }
+      if (s.stat) { ctx.fillStyle = C.muted; fitText(ctx, s.stat, rightX, top + 46, 250, 12, SHARE_FONT, '600'); }
       y += ROW;
       if (i === 0 && sides.length === 2) y += 6;
     });
