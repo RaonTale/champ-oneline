@@ -32,8 +32,8 @@ Rillaboom: {                 // key = 영문 종족명 (폼은 하이픈: 'Garch
 ```
 
 이 한 블록만 넣으면 **파싱·데미지/결정력/내구 계산·화면 표시·자동완성**이 기존 포켓몬과
-똑같이 붙는다. 재생성·빌드 필요 없음. (`champions_data.js` 안에 작동 예시 `Rillaboom`
-과 템플릿이 주석으로 들어 있으니 복사해서 채우면 된다.)
+똑같이 붙는다. 재생성·빌드 필요 없음. (`champions_data.js` 의 `speciesOverrides` 위
+안내 주석과 템플릿을 복사해서 채우면 된다.)
 
 - **영문 종족명 key** 는 @smogon/calc 표기 기준. 폼은 하이픈(`Tornadus-Therian`),
   신규 메가는 새 폼명(`Garchomp-Mega-Z`)으로 넣는다.

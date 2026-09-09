@@ -29,43 +29,8 @@
     // ⚠️ 여기 항목은 전부 "임시 다리"다. 엔진(vendor/calc)을 업데이트해서 해당 포켓몬이
     //    정식 수록되면 그 항목을 반드시 삭제할 것. (안 지우면 임시 종족값이 정식 데이터를 덮어쓴다.)
     speciesOverrides: {
-      // 고릴타 — ⚠️ 엔진 업데이트로 정식 수록되면 삭제
-      Rillaboom: {
-        ko: '고릴타', aliases: ['고릴라'],
-        baseStats: {hp: 100, atk: 125, def: 90, spa: 60, spd: 70, spe: 85},
-        types: ['Grass'], weightkg: 90,
-        abilities: ['Overgrow', 'Grassy Surge'],
-      },
-      // 드닐레이브 — ⚠️ 엔진 업데이트로 정식 수록되면 삭제 (종족값·무게는 전국도감 표준값)
-      Baxcalibur: {
-        ko: '드닐레이브', aliases: ['드닐'],
-        baseStats: {hp: 115, atk: 145, def: 92, spa: 75, spd: 86, spe: 87},
-        types: ['Dragon', 'Ice'], weightkg: 210,
-        abilities: ['Thermal Exchange', 'Ice Body'],
-      },
-      // 메가한카리아스Z — ⚠️ 엔진 업데이트로 정식 수록되면 삭제
-      //   기존 메가진화와 다른 신규 폼. 부유·순수 드래곤. 무게는 미지정이라 한카리아스 기준(95kg).
-      'Garchomp-Mega-Z': {
-        ko: '메가한카리아스Z', aliases: ['메가한카Z', '한카Z'],
-        baseStats: {hp: 108, atk: 130, def: 85, spa: 141, spd: 85, spe: 151},
-        types: ['Dragon'], weightkg: 95,
-        abilities: ['Levitate'],
-      },
-      // 메가앱솔Z — ⚠️ 엔진 업데이트로 정식 수록되면 삭제. 예리함(Sharpness)은 엔진 지원(정상 작동).
-      'Absol-Mega-Z': {
-        ko: '메가앱솔Z', aliases: ['앱솔Z'],
-        baseStats: {hp: 65, atk: 154, def: 60, spa: 75, spd: 60, spe: 151},
-        types: ['Dark', 'Ghost'], weightkg: 49,
-        abilities: ['Sharpness'],
-      },
-      // 메가루카리오Z — ⚠️ 엔진 업데이트로 정식 수록되면 삭제.
-      //   파동의방호(받는 접촉기 데미지 ½)는 엔진에 없는 신규 특성 → 지금은 표기만, 효과 미반영.
-      'Lucario-Mega-Z': {
-        ko: '메가루카리오Z', aliases: ['메가루카Z', '루카Z'],
-        baseStats: {hp: 70, atk: 100, def: 70, spa: 164, spd: 70, spe: 151},
-        types: ['Fighting', 'Steel'], weightkg: 57.5,
-        abilities: ['파동의방호'],
-      },
+      // (임시 등록 포켓몬 없음) — 챔피언스 새 업데이트 대비로 모두 제거됨.
+      // 엔진(gen0)에 아직 없는 포켓몬을 임시로 추가하려면 위 안내대로 여기에 항목을 넣는다.
     },
 
     // ── 내 줄임말 ────────────────────────────────────────────────────────────
