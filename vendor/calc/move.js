@@ -1,6 +1,5 @@
 "use strict";
 exports.__esModule = true;
-
 var util_1 = require("./util");
 var SPECIAL = ['Fire', 'Water', 'Grass', 'Electric', 'Ice', 'Psychic', 'Dark', 'Dragon'];
 var Move = (function () {

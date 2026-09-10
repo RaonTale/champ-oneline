@@ -38,7 +38,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 exports.__esModule = true;
-
 var data_1 = require("./data");
 var A = __importStar(require("./adaptable"));
 var Acalculate = exports.calculate;

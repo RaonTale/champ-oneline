@@ -1,6 +1,5 @@
 "use strict";
 exports.__esModule = true;
-
 function toID(text) {
     var lcase = ('' + text).toLowerCase();
     if (lcase === 'flabébé') {

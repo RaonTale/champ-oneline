@@ -11,7 +11,6 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
     o[k2] = m[k];
 }));
 exports.__esModule = true;
-
 var calc_1 = require("./calc");
 __createBinding(exports, calc_1, "calculate");
 var pokemon_1 = require("./pokemon");

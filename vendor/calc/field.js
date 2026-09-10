@@ -16,7 +16,6 @@ var __read = (this && this.__read) || function (o, n) {
     return ar;
 };
 exports.__esModule = true;
-
 var Field = (function () {
     function Field(field) {
         if (field === void 0) { field = {}; }
@@ -91,8 +90,10 @@ var Side = (function () {
         this.isLightScreen = !!side.isLightScreen;
         this.isProtected = !!side.isProtected;
         this.isSeeded = !!side.isSeeded;
+        this.isNightmared = !!side.isNightmared;
         this.isSaltCured = !!side.isSaltCured;
         this.isForesight = !!side.isForesight;
+        this.isCharge = !!side.isCharge;
         this.isTailwind = !!side.isTailwind;
         this.isHelpingHand = !!side.isHelpingHand;
         this.isFlowerGift = !!side.isFlowerGift;

@@ -22,7 +22,6 @@ var __values = (this && this.__values) || function(o) {
     throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
 exports.__esModule = true;
-
 var stats_1 = require("./stats");
 var util_1 = require("./util");
 var STATS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];

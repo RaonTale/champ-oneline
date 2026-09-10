@@ -43,7 +43,6 @@ var __read = (this && this.__read) || function (o, n) {
     return ar;
 };
 exports.__esModule = true;
-
 var util_1 = require("../util");
 exports.NATURES = {
     Adamant: ['atk', 'spa'],

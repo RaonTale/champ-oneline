@@ -1,8 +1,8 @@
-// 서비스워커 — 오프라인 지원. 안전 전략:
-//  · HTML(navigate): 네트워크 우선 → 항상 최신, 오프라인이면 캐시로 폴백
-//  · 정적 자원: stale-while-revalidate → 캐시로 즉시 응답 + 백그라운드 갱신
-//  · 첫 방문(온라인) 때 모든 자원이 캐시되어 이후 오프라인 동작
-const CACHE = 'champcalc-v4';
+// ?쒕퉬?ㅼ썙而????ㅽ봽?쇱씤 吏?? ?덉쟾 ?꾨왂:
+//  쨌 HTML(navigate): ?ㅽ듃?뚰겕 ?곗꽑 ????긽 理쒖떊, ?ㅽ봽?쇱씤?대㈃ 罹먯떆濡??대갚
+//  쨌 ?뺤쟻 ?먯썝: stale-while-revalidate ??罹먯떆濡?利됱떆 ?묐떟 + 諛깃렇?쇱슫??媛깆떊
+//  쨌 泥?諛⑸Ц(?⑤씪?? ??紐⑤뱺 ?먯썝??罹먯떆?섏뼱 ?댄썑 ?ㅽ봽?쇱씤 ?숈옉
+const CACHE = 'champcalc-v5';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './assets/favicon.svg', './assets/icon-192.png', './assets/icon-512.png', './assets/apple-touch-icon.png',
@@ -12,11 +12,11 @@ self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);
     await c.addAll(CORE);
-    // 도감 스프라이트 프리캐시(완전 오프라인) — 실패해도 설치는 진행한다.
+    // ?꾧컧 ?ㅽ봽?쇱씠???꾨━罹먯떆(?꾩쟾 ?ㅽ봽?쇱씤) ???ㅽ뙣?대룄 ?ㅼ튂??吏꾪뻾?쒕떎.
     try {
       const list = await fetch('./assets/sprites/list.json').then(r => r.json());
       await Promise.allSettled(list.map(f => c.add('./assets/sprites/' + f)));
-    } catch (e) { /* 무시 */ }
+    } catch (e) { /* 臾댁떆 */ }
     await self.skipWaiting();
   })());
 });
@@ -34,9 +34,9 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   let url;
   try { url = new URL(req.url); } catch (_) { return; }
-  if (url.origin !== self.location.origin) return; // 외부(CDN 등)는 건드리지 않음
+  if (url.origin !== self.location.origin) return; // ?몃?(CDN ????嫄대뱶由ъ? ?딆쓬
 
-  // HTML 문서: 네트워크 우선(최신 배포 즉시 반영), 실패 시 캐시
+  // HTML 臾몄꽌: ?ㅽ듃?뚰겕 ?곗꽑(理쒖떊 諛고룷 利됱떆 諛섏쁺), ?ㅽ뙣 ??罹먯떆
   if (req.mode === 'navigate') {
     e.respondWith(
       fetch(req)
@@ -50,7 +50,7 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // 정적 자원(css/js/데이터/아이콘): stale-while-revalidate
+  // ?뺤쟻 ?먯썝(css/js/?곗씠???꾩씠肄?: stale-while-revalidate
   e.respondWith(
     caches.match(req).then(cached => {
       const network = fetch(req)

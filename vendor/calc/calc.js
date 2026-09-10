@@ -1,6 +1,5 @@
 "use strict";
 exports.__esModule = true;
-
 var field_1 = require("./field");
 var champions_1 = require("./mechanics/champions");
 var gen12_1 = require("./mechanics/gen12");

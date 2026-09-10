@@ -36,7 +36,6 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     return to.concat(ar || Array.prototype.slice.call(from));
 };
 exports.__esModule = true;
-
 var util_1 = require("../util");
 var stats_1 = require("../stats");
 var EV_ITEMS = [
@@ -252,7 +251,8 @@ function checkRawStatChanges(pokemon, powerTrickActive, wonderRoomActive) {
 exports.checkRawStatChanges = checkRawStatChanges;
 function checkIntimidate(gen, source, target) {
     var blocked = target.hasAbility('Clear Body', 'White Smoke', 'Hyper Cutter', 'Full Metal Body') ||
-        (gen.num >= 8 && target.hasAbility('Inner Focus', 'Own Tempo', 'Oblivious', 'Scrappy')) ||
+        ((gen.num >= 8 || gen.num === 0) &&
+            target.hasAbility('Inner Focus', 'Own Tempo', 'Oblivious', 'Scrappy')) ||
         target.hasItem('Clear Amulet');
     if (source.hasAbility('Intimidate') && source.abilityOn && !blocked) {
         if (target.hasAbility('Contrary', 'Defiant', 'Guard Dog')) {

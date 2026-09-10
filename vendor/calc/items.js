@@ -1,6 +1,5 @@
 "use strict";
 exports.__esModule = true;
-
 var util_1 = require("./util");
 exports.SEED_BOOSTED_STAT = {
     'Electric Seed': 'def',
